@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Team Members — {{ project }}</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f4f5f7;--white:#fff;--border:#e2e4e9;--text:#111827;--sec:#6b7280;--muted:#9ca3af;--accent:#2563eb;--accent-h:#1d4ed8;--accent-l:#eff4ff;--green:#059669;--green-l:#ecfdf5;--red:#dc2626;--shadow:0 1px 3px rgba(0,0,0,.05)}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+.header{background:var(--white);border-bottom:1px solid var(--border);padding:0 28px;height:52px;display:flex;align-items:center;justify-content:space-between}
+.header-left{display:flex;align-items:center;gap:14px}
+.logo{width:30px;height:30px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;color:#fff}
+.header h1{font-size:14px;font-weight:600;letter-spacing:-.2px}
+.back-link{font-size:12px;color:var(--accent);text-decoration:none;font-weight:500;display:flex;align-items:center;gap:4px}
+.back-link:hover{text-decoration:underline}
+
+.container{max-width:800px;margin:0 auto;padding:28px 24px}
+
+.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+.toolbar h2{font-size:16px;font-weight:600;letter-spacing:-.2px}
+.toolbar-right{display:flex;gap:8px;align-items:center}
+.search-box{background:var(--white);border:1px solid var(--border);padding:8px 14px;border-radius:8px;font-size:12.5px;font-family:inherit;outline:none;width:220px;transition:border .15s}
+.search-box:focus{border-color:var(--accent)}
+.search-box::placeholder{color:var(--muted)}
+
+.btn{padding:8px 18px;border-radius:8px;font-size:12.5px;font-weight:500;font-family:inherit;cursor:pointer;border:none;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 2px 6px rgba(37,99,235,.2)}
+.btn-primary:hover{background:var(--accent-h)}
+.btn-primary:disabled{background:#93c5fd;cursor:not-allowed;box-shadow:none}
+.btn-outline{background:var(--white);color:var(--sec);border:1px solid var(--border)}
+.btn-outline:hover{background:var(--bg);color:var(--text)}
+.btn-fetch{background:var(--white);color:var(--accent);border:1px solid var(--accent)}
+.btn-fetch:hover{background:var(--accent-l)}
+
+.info-bar{background:var(--accent-l);border:1px solid #bfdbfe;border-radius:8px;padding:10px 16px;font-size:12px;color:var(--accent);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.info-bar .count{font-weight:700;font-size:14px}
+.success-bar{background:var(--green-l);border:1px solid #bbf7d0;color:var(--green)}
+
+.card{background:var(--white);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);overflow:hidden}
+
+.select-all-row{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:#f9fafb}
+.select-all-row label{font-size:12px;font-weight:500;color:var(--sec);cursor:pointer;display:flex;align-items:center;gap:8px}
+
+.user-list{max-height:500px;overflow-y:auto}
+.user-list::-webkit-scrollbar{width:4px}.user-list::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:4px}
+
+.user-row{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #f0f1f3;transition:background .1s;cursor:pointer}
+.user-row:last-child{border-bottom:none}
+.user-row:hover{background:#fafbfc}
+.user-row.selected{background:var(--accent-l)}
+
+.user-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+
+.user-avatar{width:32px;height:32px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0;text-transform:uppercase}
+.user-row.selected .user-avatar{background:var(--accent);color:#fff}
+
+.user-info{flex:1;min-width:0}
+.user-name{font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-email{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.empty{padding:40px 20px;text-align:center;color:var(--muted);font-size:13px}
+
+.shimmer{height:14px;background:linear-gradient(90deg,#f0f1f3 25%,#e5e7eb 50%,#f0f1f3 75%);background-size:200% 100%;animation:shim 1.5s infinite;border-radius:4px;margin:12px 16px}
+.shimmer.w60{width:60%}.shimmer.w80{width:80%}
+@keyframes shim{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+.footer-bar{padding:14px 16px;border-top:1px solid var(--border);background:#f9fafb;display:flex;justify-content:space-between;align-items:center}
+.footer-bar .selected-count{font-size:12px;color:var(--sec)}
+.footer-bar .selected-count strong{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-left">
+        <div class="logo">AD</div>
+        <h1>Team Members</h1>
+    </div>
+    <a href="/" class="back-link">← Back to Dashboard</a>
+</div>
+
+<div class="container">
+    <div class="toolbar">
+        <h2>Select Your Team</h2>
+        <div class="toolbar-right">
+            <input type="text" class="search-box" id="searchBox" placeholder="Search users..." oninput="filterUsers()">
+            <button class="btn btn-fetch" id="fetchBtn" onclick="fetchTfsUsers()">Fetch from TFS</button>
+            <button class="btn btn-primary" id="saveBtn" onclick="saveSelection()" disabled>Save Selection</button>
+        </div>
+    </div>
+
+    <div id="statusBar"></div>
+
+    <div class="card">
+        <div class="select-all-row">
+            <label><input type="checkbox" id="selectAll" onchange="toggleAll()"> Select / Deselect All</label>
+        </div>
+        <div class="user-list" id="userList">
+            <div class="empty" id="emptyMsg">Click <strong>Fetch from TFS</strong> to load all users from your Azure DevOps server.</div>
+        </div>
+        <div class="footer-bar" id="footerBar" style="display:none">
+            <div class="selected-count"><strong id="selCount">0</strong> members selected</div>
+            <button class="btn btn-primary" onclick="saveSelection()">Save Selection</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let allUsers=[];
+// selectedMap: keyed by uniqueName||displayName → full user object
+let selectedMap=new Map();
+
+function userKey(u){
+    // Use uniqueName as key (most reliable TFS identifier), fallback to displayName
+    return (u.uniqueName||u.displayName).toLowerCase();
+}
+
+// Load already-saved members on page load
+async function loadSaved(){
+    try{
+        const r=await fetch('/api/selected-users');
+        const d=await r.json();
+        for(const m of d.members||[]){
+            // Handle old format (string) and new format (object)
+            if(typeof m==='string'){
+                selectedMap.set(m.toLowerCase(),{displayName:m,uniqueName:'',id:''});
+            }else{
+                selectedMap.set(userKey(m),m);
+            }
+        }
+    }catch(e){}
+}
+
+async function fetchTfsUsers(){
+    const btn=document.getElementById('fetchBtn');
+    const list=document.getElementById('userList');
+    btn.disabled=true;btn.textContent='Loading...';
+    list.innerHTML='<div class="shimmer w80"></div><div class="shimmer w60"></div><div class="shimmer w80"></div><div class="shimmer w60"></div>';
+
+    try{
+        const r=await fetch('/api/tfs-users');
+        const d=await r.json();
+        if(d.error){
+            list.innerHTML=`<div class="empty" style="color:var(--red)">${d.error}</div>`;
+            return;
+        }
+        allUsers=d.users||[];
+        renderUsers();
+        showStatus(`Found ${allUsers.length} users from TFS`,'info');
+    }catch(e){
+        list.innerHTML=`<div class="empty" style="color:var(--red)">Failed to connect: ${e.message}</div>`;
+    }finally{
+        btn.disabled=false;btn.textContent='Fetch from TFS';
+    }
+}
+
+function isSelected(u){
+    return selectedMap.has(userKey(u));
+}
+
+function renderUsers(){
+    const list=document.getElementById('userList');
+    const q=document.getElementById('searchBox').value.toLowerCase();
+    const filtered=q?allUsers.filter(u=>u.displayName.toLowerCase().includes(q)||u.uniqueName.toLowerCase().includes(q)):allUsers;
+
+    if(!filtered.length){
+        list.innerHTML=`<div class="empty">${q?'No users match your search':'No users found'}</div>`;
+        updateFooter();return;
+    }
+
+    let h='';
+    for(let i=0;i<filtered.length;i++){
+        const u=filtered[i];
+        const checked=isSelected(u);
+        const initials=u.displayName.split(/[\s.]+/).map(w=>w[0]||'').slice(0,2).join('');
+        h+=`<div class="user-row${checked?' selected':''}" data-idx="${i}" onclick="toggleIdx(${i})">
+            <input type="checkbox" ${checked?'checked':''} onclick="event.stopPropagation();" onchange="toggleIdx(${i})">
+            <div class="user-avatar">${initials}</div>
+            <div class="user-info">
+                <div class="user-name">${u.displayName}</div>
+                <div class="user-email">${u.uniqueName||'—'}</div>
+            </div>
+        </div>`;
+    }
+    list.innerHTML=h;
+    updateFooter();
+}
+
+function toggleIdx(i){
+    const q=document.getElementById('searchBox').value.toLowerCase();
+    const filtered=q?allUsers.filter(u=>u.displayName.toLowerCase().includes(q)||u.uniqueName.toLowerCase().includes(q)):allUsers;
+    const u=filtered[i];
+    if(!u)return;
+    const key=userKey(u);
+    if(selectedMap.has(key)){
+        selectedMap.delete(key);
+    }else{
+        selectedMap.set(key,{displayName:u.displayName,uniqueName:u.uniqueName||'',id:u.id||''});
+    }
+    renderUsers();
+}
+
+function toggleAll(){
+    const checked=document.getElementById('selectAll').checked;
+    const q=document.getElementById('searchBox').value.toLowerCase();
+    const filtered=q?allUsers.filter(u=>u.displayName.toLowerCase().includes(q)||u.uniqueName.toLowerCase().includes(q)):allUsers;
+    for(const u of filtered){
+        const key=userKey(u);
+        if(checked){
+            selectedMap.set(key,{displayName:u.displayName,uniqueName:u.uniqueName||'',id:u.id||''});
+        }else{
+            selectedMap.delete(key);
+        }
+    }
+    renderUsers();
+    document.getElementById('selectAll').checked=checked;
+}
+
+function filterUsers(){renderUsers()}
+
+function updateFooter(){
+    const bar=document.getElementById('footerBar');
+    const cnt=document.getElementById('selCount');
+    const saveBtn=document.getElementById('saveBtn');
+    cnt.textContent=selectedMap.size;
+    bar.style.display=allUsers.length?'flex':'none';
+    saveBtn.disabled=false;
+}
+
+async function saveSelection(){
+    // Save full user objects sorted by displayName
+    const members=Array.from(selectedMap.values()).sort((a,b)=>a.displayName.toLowerCase().localeCompare(b.displayName.toLowerCase()));
+    const saveBtn=document.getElementById('saveBtn');
+    saveBtn.disabled=true;saveBtn.textContent='Saving...';
+    try{
+        const r=await fetch('/api/selected-users',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({members})});
+        const d=await r.json();
+        if(d.ok){
+            showStatus(`Saved ${members.length} team members with TFS identities. Dashboard will use these members.`,'success');
+        }
+    }catch(e){showStatus('Failed to save: '+e.message,'error')}
+    finally{saveBtn.disabled=false;saveBtn.textContent='Save Selection'}
+}
+
+function showStatus(msg,type){
+    const bar=document.getElementById('statusBar');
+    const cls=type==='success'?'info-bar success-bar':'info-bar';
+    bar.innerHTML=`<div class="${cls}">${msg}</div>`;
+    if(type==='success')setTimeout(()=>bar.innerHTML='',4000);
+}
+
+// Init
+(async()=>{
+    await loadSaved();
+    if(selectedMap.size>0){
+        showStatus(`${selectedMap.size} team members currently saved. Fetch from TFS to modify.`,'info');
+    }
+})();
+</script>
+</body>
+</html>
