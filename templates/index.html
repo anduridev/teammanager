@@ -162,8 +162,8 @@ tbody tr:hover{background:#fafbfc}
 .pbi-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
 .pbi-card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:10px 12px;box-shadow:var(--shadow)}
 .pbi-card-title{font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pbi-card-bar{height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;margin-bottom:4px}
-.pbi-card-fill{height:100%;border-radius:3px;background:var(--green);transition:width .3s}
+.pbi-card-bar{height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;margin-bottom:4px;display:flex}
+.pbi-card-fill{height:100%;transition:width .3s}
 .pbi-card-meta{font-size:10px;color:var(--muted);display:flex;justify-content:space-between}
 
 /* Activity inline */
@@ -821,12 +821,14 @@ function renderDashboard(){
             const ch=pbiTasks[p.id]||[];
             if(!ch.length)continue;
             const dn=ch.filter(t=>isDone(t.state)).length;
+            const ip=ch.filter(t=>isProg(t.state)).length;
             const pct=Math.round(dn/ch.length*100);
-            const color=pct>=100?'var(--green)':pct>50?'var(--accent)':'#e5e7eb';
+            const progressWidth=Math.round((dn+ip)/ch.length*100);
+            const color=pct>=100?'var(--green)':pct>0?'var(--green)':ip>0?'var(--accent)':'var(--muted)';
             h+=`<div class="pbi-card">
                 <div class="pbi-card-title" title="${esc(p.title)}">#${p.id} ${esc(p.title)}</div>
-                <div class="pbi-card-bar"><div class="pbi-card-fill" style="width:${pct}%;background:${color}"></div></div>
-                <div class="pbi-card-meta"><span>${dn}/${ch.length} tasks done</span><span>${pct}%</span></div>
+                <div class="pbi-card-bar"><div class="pbi-card-fill" style="width:${pct}%;background:var(--green)"></div><div class="pbi-card-fill" style="width:${ip>0&&pct<100?Math.round(ip/ch.length*100):0}%;background:var(--accent)"></div></div>
+                <div class="pbi-card-meta"><span>${dn} done · ${ip} active · ${ch.length-dn-ip} todo</span><span>${pct}%</span></div>
             </div>`;
         }
         h+=`</div></div>`;
