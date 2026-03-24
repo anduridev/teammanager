@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Sign In — {{ project }}</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f4f5f7;--white:#fff;--border:#e2e4e9;--text:#111827;--sec:#6b7280;--muted:#9ca3af;--accent:#2563eb;--accent-h:#1d4ed8;--accent-l:#eff4ff;--shadow:0 4px 24px rgba(0,0,0,.08)}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;-webkit-font-smoothing:antialiased}
+
+.login-card{background:var(--white);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:40px 36px;width:100%;max-width:400px}
+.login-logo{width:48px;height:48px;background:var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#fff;margin:0 auto 20px}
+.login-card h1{font-size:20px;font-weight:700;text-align:center;margin-bottom:4px;letter-spacing:-.3px}
+.login-card .subtitle{font-size:13px;color:var(--sec);text-align:center;margin-bottom:28px}
+.login-card .project-name{font-size:11px;font-weight:600;color:var(--accent);background:var(--accent-l);padding:4px 10px;border-radius:6px;display:inline-block;margin-bottom:24px;text-align:center;width:100%}
+
+.form-group{margin-bottom:20px}
+.form-group label{display:block;font-size:12px;font-weight:600;color:var(--sec);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+.login-input{width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:10px;font-size:13.5px;font-family:inherit;color:var(--text);background:var(--white);outline:none;transition:border-color .15s}
+.login-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+.login-input::placeholder{color:var(--muted)}
+.hint{font-size:11px;color:var(--muted);margin-top:6px}
+
+.btn-signin{width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .15s;box-shadow:0 2px 8px rgba(37,99,235,.2)}
+.btn-signin:hover{background:var(--accent-h)}
+.btn-signin:disabled{background:#93c5fd;cursor:not-allowed;box-shadow:none}
+
+.error-msg{background:#fef2f2;border:1px solid #fecaca;color:#dc2626;font-size:12px;padding:10px 14px;border-radius:8px;margin-bottom:16px;display:none}
+.loading-msg{color:var(--muted);font-size:12px;text-align:center;padding:8px 0}
+</style>
+</head>
+<body>
+
+<div class="login-card">
+    <div class="login-logo">AD</div>
+    <h1>Welcome Back</h1>
+    <p class="subtitle">Sign in to your sprint dashboard</p>
+    <div class="project-name">{{ project }}</div>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <form onsubmit="return doLogin(event)">
+        <div class="form-group">
+            <label>TFS Username</label>
+            <input type="text" id="usernameInput" class="login-input" placeholder="e.g. johndoe" required autocomplete="off" autofocus>
+            <div class="hint">Enter your TFS username (without TFS\ prefix)</div>
+        </div>
+        <button type="submit" class="btn-signin" id="signInBtn">Sign In</button>
+    </form>
+</div>
+
+<script>
+async function doLogin(e) {
+    e.preventDefault();
+    const raw = document.getElementById('usernameInput').value.trim();
+    if (!raw) return false;
+
+    // Strip TFS\ prefix if user typed it
+    const username = raw.replace(/^TFS\\/i, '');
+    const uniqueName = 'TFS\\' + username;
+
+    const btn = document.getElementById('signInBtn');
+    btn.disabled = true;
+    btn.textContent = 'Signing in...';
+
+    try {
+        const r = await fetch('/api/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                displayName: username,
+                uniqueName: uniqueName,
+                id: ''
+            })
+        });
+        const d = await r.json();
+        if (d.ok) {
+            window.location.href = '/';
+        } else {
+            showError(d.error || 'Login failed');
+            btn.disabled = false;
+            btn.textContent = 'Sign In';
+        }
+    } catch (err) {
+        showError('Connection error: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+    }
+    return false;
+}
+
+function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 5000);
+}
+</script>
+</body>
+</html>

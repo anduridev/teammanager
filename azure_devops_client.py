@@ -238,45 +238,86 @@ class AzureDevOpsClient:
         self._cache.set(key, result)
         return result
 
+    def search_identities(self, query: str) -> list:
+        """Search ALL TFS users via IdentityPicker API. Fast, works on TFS 2018+."""
+        results = []
+        seen = set()
+        if not query or len(query) < 2:
+            return results
+        try:
+            url = f"{self.org_url}/_apis/IdentityPicker/Identities"
+            resp = requests.post(url, headers=self._json_headers, params={
+                "api-version": "5.0-preview.1",
+            }, json={
+                "query": query,
+                "identityTypes": ["user"],
+                "operationScopes": ["ims", "source"],
+                "properties": ["DisplayName", "SamAccountName", "Active"],
+                "options": {"MinResults": 5, "MaxResults": 50},
+            }, timeout=10)
+            resp.raise_for_status()
+            identity_results = resp.json().get("results", [])
+            identities = identity_results[0].get("identities", []) if identity_results else []
+            for identity in identities:
+                if not identity.get("active"):
+                    continue
+                name = identity.get("displayName", "")
+                account = identity.get("samAccountName", "")
+                uid = identity.get("localId", "")
+                unique = f"TFS\\{account}" if account else ""
+                if not name or name.startswith("["):
+                    continue
+                key = (account or name).lower()
+                if key not in seen:
+                    seen.add(key)
+                    results.append({
+                        "displayName": name,
+                        "uniqueName": unique,
+                        "id": uid,
+                    })
+        except Exception:
+            pass
+        results.sort(key=lambda x: x["displayName"].lower())
+        return results
+
     def get_team_members(self) -> list:
-        """Get all members from the project teams. Tries multiple TFS API URL formats."""
+        """Get TFS users from project teams + work item assignees."""
         all_members = []
         seen = set()
 
-        # Try different URL patterns for on-premise TFS
+        # 1. Project team members
         team_urls = [
             f"{self.org_url}/_apis/projects/{self.project}/teams",
             f"{self.org_url}/{self.project}/_apis/projects/{self.project}/teams",
         ]
-
         teams = []
         for url in team_urls:
             try:
-                resp = requests.get(url, headers=self._json_headers, params=self._api_params())
+                resp = requests.get(url, headers=self._json_headers,
+                                    params=self._api_params(), timeout=10)
                 resp.raise_for_status()
                 teams = resp.json().get("value", [])
                 break
             except Exception:
                 continue
 
-        # If teams API worked, get members from each team
         for team in teams:
             team_id = team.get("id", "")
-            team_name = team.get("name", "")
             member_urls = [
                 f"{self.org_url}/_apis/projects/{self.project}/teams/{team_id}/members",
                 f"{self.org_url}/{self.project}/_apis/projects/{self.project}/teams/{team_id}/members",
             ]
             for murl in member_urls:
                 try:
-                    mr = requests.get(murl, headers=self._json_headers, params=self._api_params())
+                    mr = requests.get(murl, headers=self._json_headers,
+                                      params=self._api_params(), timeout=10)
                     mr.raise_for_status()
                     for m in mr.json().get("value", []):
                         identity = m.get("identity", {})
                         name = identity.get("displayName", "")
                         uid = identity.get("uniqueName", "") or identity.get("id", "")
-                        if name and name not in seen:
-                            seen.add(name)
+                        if name and name.lower() not in seen:
+                            seen.add(name.lower())
                             all_members.append({
                                 "displayName": name,
                                 "uniqueName": uid,
@@ -286,36 +327,46 @@ class AzureDevOpsClient:
                 except Exception:
                     continue
 
-        # Fallback: extract unique assignees from recent work items
-        if not all_members:
-            try:
-                wiql = (
-                    "SELECT [System.Id] FROM WorkItems "
-                    "WHERE [System.WorkItemType] IN ('Task', 'Product Backlog Item') "
-                    "AND [System.AssignedTo] <> '' "
-                    "ORDER BY [System.ChangedDate] DESC"
-                )
-                items = self.query_work_items(wiql)
-                for wi in items:
-                    assigned = wi["fields"].get("System.AssignedTo")
-                    if isinstance(assigned, dict):
-                        name = assigned.get("displayName", "")
-                        uid = assigned.get("uniqueName", "") or assigned.get("id", "")
-                    else:
-                        name = assigned or ""
-                        uid = ""
-                    if name and name not in seen:
-                        seen.add(name)
-                        all_members.append({
-                            "displayName": name,
-                            "uniqueName": uid,
-                            "id": "",
-                        })
-            except Exception:
-                pass
-
         all_members.sort(key=lambda x: x["displayName"].lower())
         return all_members
+
+    def query_work_items_cross_project(self, wiql: str) -> list:
+        """Run a WIQL query across ALL projects (uses collection-level endpoint)."""
+        key = f"wiql_xp_{hash(wiql)}"
+        cached = self._cache.get(key)
+        if cached is not None:
+            return cached
+
+        # Use the collection-level WIQL endpoint (no project in URL)
+        url = f"{self.org_url}/_apis/wit/wiql"
+        resp = requests.post(
+            url,
+            headers=self._json_headers,
+            params=self._api_params(),
+            json={"query": wiql},
+        )
+        resp.raise_for_status()
+        work_items = resp.json().get("workItems", [])
+        if not work_items:
+            self._cache.set(key, [])
+            return []
+
+        # Fetch in batches of 200
+        all_details = []
+        details_url = f"{self.org_url}/_apis/wit/workitems"
+        for i in range(0, len(work_items), 200):
+            batch = work_items[i:i + 200]
+            ids = ",".join(str(wi["id"]) for wi in batch)
+            details_resp = requests.get(
+                details_url,
+                headers=self._json_headers,
+                params=self._api_params({"ids": ids, "$expand": "relations"}),
+            )
+            details_resp.raise_for_status()
+            all_details.extend(details_resp.json().get("value", []))
+
+        self._cache.set(key, all_details)
+        return all_details
 
     def query_work_items(self, wiql: str) -> list:
         """Run a WIQL query and return matching work items.

@@ -315,13 +315,31 @@ tbody tr:hover{background:#fafbfc}
             <option value="">Loading sprints...</option>
         </select>
     </div>
-    <button class="btn-refresh" id="refreshBtn" onclick="refreshAll()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-        Refresh
-    </button>
+    <div style="display:flex;align-items:center;gap:8px">
+        <button class="btn-refresh" id="refreshBtn" onclick="refreshAll()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Refresh
+        </button>
+        {% if role == 'superadmin' %}
+        <button class="btn-refresh" onclick="showView('admin')" style="color:var(--accent)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Admin
+        </button>
+        {% endif %}
+        <div style="display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--bg);border-radius:6px;font-size:11px;color:var(--sec)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span style="font-weight:500;color:var(--text)">{{ user.displayName }}</span>
+            <span style="font-size:9px;padding:1px 5px;border-radius:3px;font-weight:600;background:var(--accent-l);color:var(--accent)">{{ role }}</span>
+        </div>
+        <a href="/logout" class="btn-refresh" style="text-decoration:none;color:var(--red);border-color:var(--red)" title="Sign Out">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </a>
+    </div>
 </div>
 
 <div class="sub-header" id="subHeader">
+    <div class="sh-item"><span>Project</span> <span class="sh-label">{{ project }}</span></div>
+    <div class="sh-divider"></div>
     <div class="sh-item"><span>Week</span> <span class="sh-label" id="shWeek">—</span></div>
     <div class="sh-divider"></div>
     <div class="sh-item"><span>Sprint</span> <span class="sh-label" id="shSprint">—</span></div>
@@ -335,7 +353,8 @@ tbody tr:hover{background:#fafbfc}
             <div class="sidebar-title">Views</div>
             <button class="sb active" id="navDash" onclick="showView('dashboard')"><span class="sbi bl"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span>Dashboard</button>
             <button class="sb" id="navChat" onclick="showView('chat')"><span class="sbi pu"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>AI Agent</button>
-            <a href="/users" class="sb" style="text-decoration:none"><span class="sbi tl"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Manage Team</a>
+            <button class="sb" onclick="showView('team_manage')"><span class="sbi tl"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Manage Team</button>
+            {% if role == 'superadmin' %}<button class="sb" onclick="showView('admin')"><span class="sbi pk"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Admin</button>{% endif %}
         </div>
         <div class="sdiv"></div>
         <div class="sidebar-section">
@@ -605,19 +624,26 @@ function showView(v){
     const dv=document.getElementById('dashboardView');
     const det=document.getElementById('detailView');
     if(v==='chat'){
-        cs.style.display='none';
-        cv.style.display='flex';
+        cs.style.display='none';cv.style.display='flex';
         document.getElementById('userInput').focus();
+    }else if(v==='team_manage'){
+        cs.style.display='block';cv.style.display='none';
+        dv.style.display='none';det.style.display='block';
+        renderTeamManagePage();
+    }else if(v==='admin'){
+        cs.style.display='block';cv.style.display='none';
+        dv.style.display='none';det.style.display='block';
+        renderAdminPage();
     }else{
-        cs.style.display='block';
-        cv.style.display='none';
+        cs.style.display='block';cv.style.display='none';
         dv.style.display=v==='dashboard'?'block':'none';
         det.style.display='none';
     }
+    document.querySelectorAll('.sidebar .sb').forEach(b=>b.classList.remove('active'));
     document.getElementById('tabDash').className='tab-btn'+(v==='dashboard'?' active':'');
     document.getElementById('tabChat').className='tab-btn'+(v==='chat'?' active':'');
-    document.getElementById('navDash').className='sb'+(v==='dashboard'?' active':'');
-    document.getElementById('navChat').className='sb'+(v==='chat'?' active':'');
+    if(v==='dashboard')document.getElementById('navDash').classList.add('active');
+    if(v==='chat')document.getElementById('navChat').classList.add('active');
 }
 
 // ── Dashboard ── (uses pre-loaded SD data)
@@ -993,34 +1019,65 @@ const origBuildFilterBar=buildFilterBar;
 // Override filter bar for detail view to call showDetail instead
 const _origGetFilters=getFilters;
 
-function showMember(name){
-    if(!D){loadSprintData().then(()=>showMember(name));return}
+function showMember(name, crossProject){
+    if(!D && !crossProject){loadSprintData().then(()=>showMember(name));return}
     document.getElementById('contentScroll').style.display='block';
     document.getElementById('chatView').style.display='none';
     document.getElementById('dashboardView').style.display='none';
     const dv=document.getElementById('detailView');dv.style.display='block';
+
+    if(crossProject){
+        // Fetch cross-project tasks via API
+        dv.innerHTML='<button class="back-btn" onclick="showView(\'dashboard\')">← Back to Dashboard</button><div class="detail-card"><div class="shimmer w80"></div><div class="shimmer w60"></div><div class="shimmer w80"></div></div>';
+        const sp=document.getElementById('sprintSelect').value||'';
+        fetch(`/api/member-tasks?member=${encodeURIComponent(name)}&sprint=${encodeURIComponent(sp)}&cross_project=true`)
+        .then(r=>r.json()).then(d=>{
+            if(d.error){dv.innerHTML=`<button class="back-btn" onclick="showView('dashboard')">← Back</button><div class="detail-card"><h3>Error</h3><p>${esc(d.error)}</p></div>`;return}
+            renderMemberDetail(dv, d, name, true);
+        }).catch(e=>{dv.innerHTML=`<button class="back-btn" onclick="showView('dashboard')">← Back</button><div class="detail-card"><h3>Error</h3><p>${esc(e.message)}</p></div>`});
+        return;
+    }
+
     try{
-        // Find member from local data
         const m=D.members.find(m=>m.member===name);
         const totalCompleted=m?m.completed_hours:0;
-        const d={member:name,sprint:D.sprint.name||'',task_count:m?m.task_count:0,total_allocated_hours:m?m.total_allocated_hours:0,total_remaining_hours:m?m.remaining_hours:0,total_completed:totalCompleted,tasks:m?m.tasks.map(t=>({id:t.id,title:t.title,state:t.state,priority:t.priority,planned:t.original_estimate||0,remaining_hours:t.remaining_work,completed:t.completed_work||0})):[]};
-        // Render from local data
-        let h=`<button class="back-btn" onclick="showView('dashboard')">← Back to Dashboard</button>
-        <div class="detail-card"><h3>${esc(d.member)}</h3><div class="subtitle">${esc(d.sprint)} — ${d.task_count} tasks</div>
-        <div class="stats" style="margin-bottom:16px">
-            <div class="stat"><div class="stat-val">${d.task_count}</div><div class="stat-lbl">Tasks</div></div>
-            <div class="stat or"><div class="stat-val">${d.total_allocated_hours}h</div><div class="stat-lbl">Planned</div></div>
-            <div class="stat"><div class="stat-val">${d.total_remaining_hours}h</div><div class="stat-lbl">Remaining</div></div>
-            <div class="stat gr"><div class="stat-val">${d.total_completed}h</div><div class="stat-lbl">Completed</div></div>
-        </div>`;
-        if(!d.tasks.length){h+=`<p style="color:var(--muted)">No tasks assigned.</p>`}
-        else{
-            h+=`<div class="tbl-wrap" style="border:none;box-shadow:none"><table><thead><tr><th>ID</th><th>Task</th><th>State</th><th>Planned</th><th>Remaining</th><th>Completed</th></tr></thead><tbody>`;
-            for(const t of d.tasks)h+=`<tr><td>#${t.id}</td><td>${esc(t.title)}</td><td>${badge(t.state)}</td><td>${t.planned}h</td><td>${t.remaining_hours}h</td><td style="color:${t.completed>0?'var(--green)':'var(--muted)'}"><b>${t.completed}h</b></td></tr>`;
-            h+=`</tbody></table></div>`;
-        }
-        h+=`</div>`;dv.innerHTML=h;
+        const d={member:name,sprint:D.sprint.name||'',task_count:m?m.task_count:0,total_allocated_hours:m?m.total_allocated_hours:0,total_remaining_hours:m?m.remaining_hours:0,total_completed:totalCompleted,tasks:m?m.tasks.map(t=>({id:t.id,title:t.title,state:t.state,priority:t.priority,planned:t.original_estimate||0,remaining_hours:t.remaining_work,completed:t.completed_work||0,project:'',iteration:''})):[]};
+        renderMemberDetail(dv, d, name, false);
     }catch(e){dv.innerHTML=`<button class="back-btn" onclick="showView('dashboard')">← Back</button><div class="detail-card"><h3>Error</h3><p>${esc(e.message)}</p></div>`}
+}
+
+function renderMemberDetail(dv, d, name, isCross){
+    const taskCount=d.task_count||d.tasks.length;
+    const planned=d.total_allocated_hours||0;
+    const remaining=d.total_remaining_hours||0;
+    const completed=d.total_completed_hours||d.total_completed||0;
+    const sprintLabel=d.sprint||'';
+    let h=`<button class="back-btn" onclick="showView('dashboard')">← Back to Dashboard</button>
+    <div class="detail-card"><h3>${esc(d.member||name)}</h3>
+    <div class="subtitle" style="display:flex;align-items:center;gap:12px">${esc(sprintLabel)} — ${taskCount} tasks
+        <button onclick="showMember('${name.replace(/'/g,"\\'")}',${!isCross})" style="font-size:11px;padding:3px 10px;border-radius:5px;border:1px solid var(--accent);background:${isCross?'var(--accent)':'var(--white)'};color:${isCross?'#fff':'var(--accent)'};cursor:pointer;font-family:inherit;font-weight:500">${isCross?'All Projects (Active)':'Show All Projects'}</button>
+    </div>
+    <div class="stats" style="margin-bottom:16px">
+        <div class="stat"><div class="stat-val">${taskCount}</div><div class="stat-lbl">Tasks</div></div>
+        <div class="stat or"><div class="stat-val">${planned}h</div><div class="stat-lbl">Planned</div></div>
+        <div class="stat"><div class="stat-val">${remaining}h</div><div class="stat-lbl">Remaining</div></div>
+        <div class="stat gr"><div class="stat-val">${completed}h</div><div class="stat-lbl">Completed</div></div>
+    </div>`;
+    const tasks=d.tasks||[];
+    if(!tasks.length){h+=`<p style="color:var(--muted)">No tasks assigned.</p>`}
+    else{
+        const showProject=isCross;
+        h+=`<div class="tbl-wrap" style="border:none;box-shadow:none"><table><thead><tr><th>ID</th><th>Task</th><th>State</th>${showProject?'<th>Project</th>':''}<th>Planned</th><th>Remaining</th><th>Completed</th></tr></thead><tbody>`;
+        for(const t of tasks){
+            const pl=t.planned||t.allocated_hours||0;
+            const rem=t.remaining_hours||0;
+            const comp=t.completed||t.completed_hours||0;
+            const proj=t.project||t.iteration||'';
+            h+=`<tr><td>#${t.id}</td><td>${esc(t.title)}</td><td>${badge(t.state)}</td>${showProject?`<td style="font-size:10px;color:var(--muted)">${esc(proj)}</td>`:''}  <td>${pl}h</td><td>${rem}h</td><td style="color:${comp>0?'var(--green)':'var(--muted)'}"><b>${comp}h</b></td></tr>`;
+        }
+        h+=`</tbody></table></div>`;
+    }
+    h+=`</div>`;dv.innerHTML=h;
 }
 
 // ── AI Chat ──
@@ -1466,6 +1523,308 @@ function formatTime(dateStr){
         if(diff<86400)return Math.floor(diff/3600)+'h ago';
         return Math.floor(diff/86400)+'d ago';
     }catch(e){return''}
+}
+
+// ── Team Manage (in-app) ──
+let tmUsers=[], tmSelected=new Map();
+function tmKey(u){return(u.uniqueName||u.displayName).toLowerCase()}
+
+async function renderTeamManagePage(){
+    const el=document.getElementById('detailView');
+    el.innerHTML=`<button class="back-btn" onclick="showView('dashboard')">← Back to Dashboard</button>
+    <div class="detail-card" style="margin-bottom:16px">
+    <h3 style="margin-bottom:4px">Project Tracking</h3>
+    <p style="font-size:12px;color:var(--sec);margin-bottom:12px">Select which projects to track. Leave empty for all projects.</p>
+    <div id="projStatus"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+        <button onclick="tmFetchProjects()" id="projFetchBtn" style="padding:7px 16px;border-radius:7px;font-size:12px;font-weight:500;font-family:inherit;cursor:pointer;border:1px solid var(--accent);background:var(--accent-l);color:var(--accent)">Load Projects</button>
+        <button onclick="tmSaveProjects()" style="padding:7px 16px;border-radius:7px;font-size:12px;font-weight:500;font-family:inherit;cursor:pointer;border:none;background:var(--green);color:#fff">Save Projects</button>
+        <span id="projInfo" style="font-size:11px;color:var(--sec)"></span>
+    </div>
+    <div id="projList" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+    </div>
+
+    <div class="detail-card">
+    <h3 style="margin-bottom:4px">Manage Team Members</h3>
+    <p style="font-size:12px;color:var(--sec);margin-bottom:16px">Search and add TFS users to your team. Each manager has their own team — no conflicts.</p>
+
+    <div style="font-size:12px;font-weight:600;margin-bottom:8px">Add Member</div>
+    <div style="position:relative;margin-bottom:16px">
+        <input type="text" id="tmSearchInput" class="filter-input" placeholder="Type to search TFS users (min 2 chars)..." oninput="tmSearchUsers()" style="width:100%">
+        <div id="tmDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--white);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-m);max-height:220px;overflow-y:auto;z-index:99;margin-top:2px"></div>
+    </div>
+    <div id="tmStatus"></div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:12px;font-weight:600">Current Team <span id="tmCount" style="font-weight:400;color:var(--sec)"></span></div>
+        <button onclick="tmSave()" id="tmSaveBtn" style="padding:6px 16px;border-radius:7px;font-size:12px;font-weight:500;font-family:inherit;cursor:pointer;border:none;background:var(--green);color:#fff;transition:all .15s">Save Changes</button>
+    </div>
+    <div class="tbl-wrap"><table><thead><tr><th>Name</th><th>TFS Username</th><th style="width:70px">Action</th></tr></thead><tbody id="tmBody"></tbody></table></div>
+    </div>`;
+    // Load saved team
+    tmSelected.clear();
+    try{const r=await fetch('/api/selected-users');const d=await r.json();
+    for(const m of d.members||[]){if(typeof m==='string')tmSelected.set(m.toLowerCase(),{displayName:m,uniqueName:'',id:''});else tmSelected.set(tmKey(m),m)}}catch(e){}
+    tmRenderTeamTable();
+    // Load saved projects
+    try{const r=await fetch('/api/my-projects');const d=await r.json();
+    tmSelectedProjects=new Set((d.projects||[]).map(p=>p.toLowerCase()));
+    const info=document.getElementById('projInfo');
+    info.textContent=tmSelectedProjects.size?tmSelectedProjects.size+' project(s) selected':'All projects (default)'}catch(e){}
+}
+
+let tmSearchTimer=null;
+let tmSearchResults=[];
+
+function tmPickResult(i){
+    const u=tmSearchResults[i];if(!u)return;
+    tmAddMember(u.displayName,u.uniqueName||'',u.id||'');
+}
+
+function tmSearchUsers(){
+    clearTimeout(tmSearchTimer);
+    const q=(document.getElementById('tmSearchInput')||{}).value||'';
+    const dd=document.getElementById('tmDropdown');
+    if(q.length<2){dd.style.display='none';return}
+    tmSearchTimer=setTimeout(async()=>{
+        dd.innerHTML='<div style="padding:10px 14px;font-size:12px;color:var(--muted)">Searching...</div>';
+        dd.style.display='block';
+        tmSearchResults=[];
+        try{
+            const r=await fetch(`/api/search-users?q=${encodeURIComponent(q)}`);
+            const d=await r.json();
+            tmSearchResults=d.users||[];
+            if(!tmSearchResults.length){dd.innerHTML='<div style="padding:10px 14px;font-size:12px;color:var(--muted)">No users found</div>';return}
+            let h='';
+            for(let i=0;i<tmSearchResults.length;i++){
+                const u=tmSearchResults[i];
+                const already=tmSelected.has(tmKey(u));
+                const initials=u.displayName.split(/[\s.]+/).map(w=>(w[0]||'')).slice(0,2).join('').toUpperCase();
+                h+=`<div onclick="tmPickResult(${i})" style="padding:8px 14px;cursor:${already?'default':'pointer'};display:flex;align-items:center;gap:10px;border-bottom:1px solid #f0f1f3;transition:background .1s;font-size:12px;${already?'opacity:.4':''}" ${already?'':`onmouseover="this.style.background='var(--accent-l)'" onmouseout="this.style.background=''"`}>
+                <div style="width:26px;height:26px;border-radius:50%;background:${already?'var(--green)':'var(--bg)'};color:${already?'#fff':'var(--muted)'};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">${already?'✓':initials}</div>
+                <div><div style="font-weight:500">${esc(u.displayName)}</div><div style="font-size:10px;color:var(--muted)">${esc(u.uniqueName||'')}</div></div></div>`;
+            }
+            dd.innerHTML=h;
+        }catch(e){dd.innerHTML=`<div style="padding:10px 14px;font-size:12px;color:var(--red)">Error: ${e.message}</div>`}
+    },300);
+}
+
+function tmAddMember(name,unique,id){
+    const key=(unique||name).toLowerCase();
+    if(tmSelected.has(key))return;
+    tmSelected.set(key,{displayName:name,uniqueName:unique,id:id});
+    document.getElementById('tmSearchInput').value='';
+    document.getElementById('tmDropdown').style.display='none';
+    tmRenderTeamTable();
+    document.getElementById('tmStatus').innerHTML=`<div style="font-size:12px;color:var(--green);margin-bottom:8px">Added ${name}. Click <b>Save Changes</b> to persist.</div>`;
+}
+
+function tmRemoveMember(key){
+    tmSelected.delete(key);
+    tmRenderTeamTable();
+}
+
+function tmRenderTeamTable(){
+    const el=document.getElementById('tmBody');
+    const count=document.getElementById('tmCount');
+    count.textContent='('+tmSelected.size+')';
+    if(!tmSelected.size){el.innerHTML='<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:20px;font-size:12px">No team members yet. Search and add above.</td></tr>';return}
+    let h='';
+    const sorted=Array.from(tmSelected.entries()).sort((a,b)=>a[1].displayName.localeCompare(b[1].displayName));
+    for(const[key,m] of sorted){
+        const initials=m.displayName.split(/[\s.]+/).map(w=>(w[0]||'')).slice(0,2).join('').toUpperCase();
+        h+=`<tr style="border-bottom:1px solid #f0f1f3">
+        <td style="padding:8px 14px;font-weight:500;font-size:13px"><div style="display:flex;align-items:center;gap:10px"><div style="width:28px;height:28px;border-radius:50%;background:var(--accent-l);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${initials}</div>${esc(m.displayName)}</div></td>
+        <td style="padding:8px 14px;font-size:11px;color:var(--sec)">${esc(m.uniqueName||'—')}</td>
+        <td style="padding:8px 14px;text-align:right"><button onclick="tmRemoveMember('${key.replace(/\\/g,'\\\\')}');event.stopPropagation()" style="padding:3px 10px;border:1px solid #fecaca;background:var(--red-l);color:var(--red);border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:500">Remove</button></td></tr>`;
+    }
+    el.innerHTML=h;
+}
+
+// Close search dropdown on outside click
+document.addEventListener('click',e=>{
+    const dd=document.getElementById('tmDropdown');
+    const inp=document.getElementById('tmSearchInput');
+    if(dd&&inp&&!dd.contains(e.target)&&e.target!==inp)dd.style.display='none';
+});
+
+async function tmSave(){
+    const members=Array.from(tmSelected.values()).sort((a,b)=>a.displayName.localeCompare(b.displayName));
+    const btn=document.getElementById('tmSaveBtn');btn.disabled=true;btn.textContent='Saving...';
+    try{const r=await fetch('/api/selected-users',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({members})});const d=await r.json();
+    if(d.ok){document.getElementById('tmStatus').innerHTML=`<div style="font-size:12px;color:var(--green);margin-bottom:8px">Saved ${members.length} team members. Refresh to update dashboard.</div>`;
+    document.getElementById('tmInfoText').textContent=members.length+' members saved'}}
+    catch(e){document.getElementById('tmStatus').innerHTML=`<div style="color:var(--red);font-size:12px">Error: ${e.message}</div>`}
+    finally{btn.disabled=false;btn.textContent='Save Selection'}
+}
+
+// ── Project Selection ──
+let tmProjects=[], tmSelectedProjects=new Set();
+
+async function tmFetchProjects(){
+    const btn=document.getElementById('projFetchBtn');btn.disabled=true;btn.textContent='Loading...';
+    try{
+        // Load available TFS projects
+        const r=await fetch('/api/tfs-projects');const d=await r.json();
+        tmProjects=d.projects||[];
+        // Load currently saved projects
+        const r2=await fetch('/api/my-projects');const d2=await r2.json();
+        tmSelectedProjects=new Set((d2.projects||[]).map(p=>p.toLowerCase()));
+        tmRenderProjects();
+    }catch(e){document.getElementById('projStatus').innerHTML=`<div style="color:var(--red);font-size:12px;margin-bottom:8px">Error: ${e.message}</div>`}
+    finally{btn.disabled=false;btn.textContent='Load Projects'}
+}
+
+function tmRenderProjects(){
+    const el=document.getElementById('projList');
+    if(!tmProjects.length){el.innerHTML='<span style="font-size:12px;color:var(--muted)">No projects found</span>';return}
+    let h='';
+    for(const p of tmProjects){
+        const sel=tmSelectedProjects.has(p.name.toLowerCase());
+        h+=`<button onclick="tmToggleProject('${esc(p.name)}')" style="padding:6px 14px;border-radius:7px;font-size:12px;font-weight:500;font-family:inherit;cursor:pointer;border:1px solid ${sel?'var(--accent)':'var(--border)'};background:${sel?'var(--accent-l)':'var(--white)'};color:${sel?'var(--accent)':'var(--sec)'};transition:all .15s">${esc(p.name)}</button>`;
+    }
+    el.innerHTML=h;
+    const info=document.getElementById('projInfo');
+    info.textContent=tmSelectedProjects.size?tmSelectedProjects.size+' project(s) selected':'All projects (default)';
+}
+
+function tmToggleProject(name){
+    const key=name.toLowerCase();
+    if(tmSelectedProjects.has(key))tmSelectedProjects.delete(key);else tmSelectedProjects.add(key);
+    tmRenderProjects();
+}
+
+async function tmSaveProjects(){
+    const projects=Array.from(tmSelectedProjects);
+    try{const r=await fetch('/api/my-projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({projects})});const d=await r.json();
+    if(d.ok){document.getElementById('projStatus').innerHTML=`<div style="font-size:12px;color:var(--green);margin-bottom:8px">Saved ${projects.length||'all'} project(s). Refresh to apply.</div>`}}
+    catch(e){document.getElementById('projStatus').innerHTML=`<div style="color:var(--red);font-size:12px">Error: ${e.message}</div>`}
+}
+
+// ── Admin Page (in-app) ──
+let adminManagers=[], adminUsers=[];
+
+async function renderAdminPage(){
+    const el=document.getElementById('detailView');
+    el.innerHTML=`<button class="back-btn" onclick="showView('dashboard')">← Back to Dashboard</button>
+    <div class="detail-card">
+    <h3 style="margin-bottom:4px">Role Management</h3>
+    <p style="font-size:12px;color:var(--sec);margin-bottom:16px">Assign manager/lead roles to TFS users. Managers can view team data and manage team members.</p>
+    <div id="adminStatus"></div>
+
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px">
+        <div style="padding:10px 14px;background:#f9fafb;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:12px;font-weight:600">Current Managers</span>
+            <span style="font-size:10px;padding:2px 8px;border-radius:4px;background:var(--accent-l);color:var(--accent);font-weight:600">Superadmin: {{ user.displayName }}</span>
+        </div>
+        <table style="width:100%;border-collapse:collapse"><thead><tr style="font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);border-bottom:1px solid var(--border)"><th style="padding:8px 14px;text-align:left;font-weight:600">Name</th><th style="padding:8px 14px;text-align:left;font-weight:600">TFS Username</th><th style="padding:8px 14px;text-align:right;font-weight:600;width:80px">Action</th></tr></thead><tbody id="adminMgrBody"><tr><td colspan="3" style="text-align:center;color:var(--muted);padding:20px;font-size:12px">Loading...</td></tr></tbody></table>
+    </div>
+
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:16px">
+        <div style="font-size:12px;font-weight:600;margin-bottom:10px">Add New Manager</div>
+        <div style="display:flex;gap:8px;align-items:center">
+            <div style="flex:1;position:relative">
+                <input type="text" id="adminSearchInput" class="filter-input" placeholder="Type name to search (min 2 chars)..." oninput="adminFilterUsers()" style="width:100%">
+                <div id="adminDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--white);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-m);max-height:200px;overflow-y:auto;z-index:99;margin-top:2px"></div>
+            </div>
+            <button onclick="adminAddSelected()" id="adminAddBtn" disabled style="padding:7px 20px;border-radius:7px;font-size:12px;font-weight:500;font-family:inherit;cursor:pointer;border:none;background:var(--accent);color:#fff;transition:all .15s;white-space:nowrap;opacity:.5">Add Manager</button>
+        </div>
+        <div id="adminSelected" style="margin-top:8px;font-size:12px;color:var(--accent);display:none"></div>
+    </div>
+    </div>`;
+    // Load managers
+    try{const r=await fetch('/api/admin/managers');const d=await r.json();adminManagers=d.managers||[];adminRenderMgrs()}catch(e){}
+}
+
+function adminRenderMgrs(){
+    const el=document.getElementById('adminMgrBody');
+    if(!adminManagers.length){el.innerHTML='<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:24px;font-size:12px">No managers assigned yet</td></tr>';return}
+    let h='';
+    for(const m of adminManagers){
+        const initials=m.displayName.split(/[\s.]+/).map(w=>(w[0]||'')).slice(0,2).join('').toUpperCase();
+        h+=`<tr style="border-bottom:1px solid #f0f1f3">
+        <td style="padding:10px 14px;font-weight:500;font-size:13px"><div style="display:flex;align-items:center;gap:10px"><div style="width:28px;height:28px;border-radius:50%;background:var(--accent-l);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${initials}</div>${esc(m.displayName)}</div></td>
+        <td style="padding:10px 14px;font-size:11px;color:var(--sec)">${esc(m.uniqueName||'—')}</td>
+        <td style="padding:10px 14px;text-align:right"><button onclick="adminRemove('${(m.uniqueName||'').replace(/\\/g,'\\\\')}','${esc(m.displayName)}')" style="padding:4px 12px;border:1px solid #fecaca;background:var(--red-l);color:var(--red);border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:500;transition:all .15s">Remove</button></td></tr>`;
+    }
+    el.innerHTML=h;
+}
+
+let adminPickedUser=null;
+let adminSearchTimer2=null;
+let adminSearchResults=[];
+
+function adminPickResult(i){
+    const u=adminSearchResults[i];if(!u)return;
+    adminPickUser(u.displayName,u.uniqueName||'',u.id||'');
+}
+
+function adminFilterUsers(){
+    clearTimeout(adminSearchTimer2);
+    const q=(document.getElementById('adminSearchInput').value||'').trim();
+    const dd=document.getElementById('adminDropdown');
+    if(q.length<2){dd.style.display='none';return}
+    adminSearchTimer2=setTimeout(async()=>{
+        dd.innerHTML='<div style="padding:10px 14px;font-size:12px;color:var(--muted)">Searching...</div>';
+        dd.style.display='block';
+        adminSearchResults=[];
+        try{
+            const r=await fetch(`/api/search-users?q=${encodeURIComponent(q)}`);
+            const d=await r.json();
+            const users=d.users||[];
+            const mgrUniques=new Set(adminManagers.map(m=>(m.uniqueName||'').toLowerCase()));
+            adminSearchResults=users.filter(u=>!mgrUniques.has((u.uniqueName||'').toLowerCase()));
+            if(!adminSearchResults.length){dd.innerHTML='<div style="padding:10px 14px;font-size:12px;color:var(--muted)">No users found</div>';return}
+            let h='';
+            for(let i=0;i<adminSearchResults.length;i++){
+                const u=adminSearchResults[i];
+                const initials=u.displayName.split(/[\s.]+/).map(w=>(w[0]||'')).slice(0,2).join('').toUpperCase();
+                h+=`<div onclick="adminPickResult(${i})" style="padding:8px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f0f1f3;transition:background .1s;font-size:12px" onmouseover="this.style.background='var(--accent-l)'" onmouseout="this.style.background=''">
+                <div style="width:24px;height:24px;border-radius:50%;background:var(--bg);color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">${initials}</div>
+                <div><div style="font-weight:500">${esc(u.displayName)}</div><div style="font-size:10px;color:var(--muted)">${esc(u.uniqueName||'')}</div></div></div>`;
+            }
+            dd.innerHTML=h;
+        }catch(e){dd.innerHTML=`<div style="padding:10px 14px;font-size:12px;color:var(--red)">Error: ${e.message}</div>`}
+    },300);
+}
+
+function adminPickUser(name,unique,id){
+    adminPickedUser={displayName:name,uniqueName:unique,id:id};
+    document.getElementById('adminSearchInput').value=name;
+    document.getElementById('adminDropdown').style.display='none';
+    document.getElementById('adminAddBtn').disabled=false;
+    document.getElementById('adminAddBtn').style.opacity='1';
+    const sel=document.getElementById('adminSelected');
+    sel.style.display='block';sel.textContent='Selected: '+name+' ('+unique+')';
+}
+
+async function adminAddSelected(){
+    if(!adminPickedUser)return;
+    try{const r=await fetch('/api/admin/managers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(adminPickedUser)});
+    const d=await r.json();
+    if(d.ok){adminManagers=d.managers;adminRenderMgrs();
+    document.getElementById('adminSearchInput').value='';
+    document.getElementById('adminSelected').style.display='none';
+    document.getElementById('adminAddBtn').disabled=true;document.getElementById('adminAddBtn').style.opacity='.5';
+    adminPickedUser=null;
+    document.getElementById('adminStatus').innerHTML='<div style="font-size:12px;color:var(--green);margin-bottom:8px">Manager added</div>'}
+    else{document.getElementById('adminStatus').innerHTML=`<div style="color:var(--red);font-size:12px;margin-bottom:8px">${d.error||'Failed'}</div>`}}
+    catch(e){document.getElementById('adminStatus').innerHTML=`<div style="color:var(--red);font-size:12px">${e.message}</div>`}
+}
+
+// Close dropdown on outside click
+document.addEventListener('click',e=>{
+    const dd=document.getElementById('adminDropdown');
+    const inp=document.getElementById('adminSearchInput');
+    if(dd&&inp&&!dd.contains(e.target)&&e.target!==inp)dd.style.display='none';
+});
+
+async function adminRemove(uniqueName, name){
+    if(!confirm('Remove manager role for '+name+'?'))return;
+    try{const r=await fetch('/api/admin/managers',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({uniqueName})});
+    const d=await r.json();if(d.ok){adminManagers=d.managers;adminRenderMgrs();
+    document.getElementById('adminStatus').innerHTML='<div style="font-size:12px;color:var(--green);margin-bottom:8px">Manager removed</div>'}}
+    catch(e){document.getElementById('adminStatus').innerHTML=`<div style="color:var(--red);font-size:12px">${e.message}</div>`}
 }
 
 // ── Init ──

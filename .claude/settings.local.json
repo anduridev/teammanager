@@ -3,7 +3,15 @@
     "allow": [
       "Skill(claude-api)",
       "Skill(claude-api:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(python -c \"from config import *; from helpers import *; from analytics import *; from chat import *; print\\(''All imports OK''\\)\")",
+      "Bash(python -c \"from app import app; print\\(''App OK, routes:'', len\\(app.url_map._rules\\)\\)\")",
+      "Bash(python -c \"import py_compile; py_compile.compile\\(''app.py'', doraise=True\\); py_compile.compile\\(''auth.py'', doraise=True\\); py_compile.compile\\(''analytics.py'', doraise=True\\); py_compile.compile\\(''azure_devops_client.py'', doraise=True\\); py_compile.compile\\(''config.py'', doraise=True\\); print\\(''All files compile OK''\\)\")",
+      "Bash(python -c \"import json; json.load\\(open\\(''app_config.json''\\)\\); print\\(''JSON OK''\\)\")",
+      "Bash(python -c \"import py_compile; py_compile.compile\\(''app.py'', doraise=True\\); print\\(''OK''\\)\")",
+      "Bash(python -c \"from app import app; print\\(''OK, routes:'', len\\(app.url_map._rules\\)\\)\")",
+      "Bash(python -c \"from app import app; print\\(''OK''\\)\")",
+      "WebSearch"
     ]
   }
 }

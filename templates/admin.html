@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Admin — {{ project }}</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f4f5f7;--white:#fff;--border:#e2e4e9;--text:#111827;--sec:#6b7280;--muted:#9ca3af;--accent:#2563eb;--accent-h:#1d4ed8;--accent-l:#eff4ff;--green:#059669;--green-l:#ecfdf5;--red:#dc2626;--red-l:#fef2f2;--shadow:0 1px 3px rgba(0,0,0,.05)}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+.header{background:var(--white);border-bottom:1px solid var(--border);padding:0 28px;height:52px;display:flex;align-items:center;justify-content:space-between}
+.header-left{display:flex;align-items:center;gap:14px}
+.logo{width:30px;height:30px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;color:#fff}
+.header h1{font-size:14px;font-weight:600;letter-spacing:-.2px}
+.back-link{font-size:12px;color:var(--accent);text-decoration:none;font-weight:500;display:flex;align-items:center;gap:4px}
+.back-link:hover{text-decoration:underline}
+
+.container{max-width:800px;margin:0 auto;padding:28px 24px}
+
+.section-title{font-size:16px;font-weight:600;margin-bottom:16px;letter-spacing:-.2px}
+.info-text{font-size:12px;color:var(--sec);margin-bottom:16px}
+
+.card{background:var(--white);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:24px}
+.card-header{padding:14px 16px;border-bottom:1px solid var(--border);background:#f9fafb;display:flex;align-items:center;justify-content:space-between}
+.card-header h3{font-size:13px;font-weight:600}
+
+.manager-list{padding:8px 0}
+.manager-row{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #f0f1f3}
+.manager-row:last-child{border-bottom:none}
+.manager-avatar{width:32px;height:32px;border-radius:50%;background:var(--accent-l);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;text-transform:uppercase}
+.manager-info{flex:1;min-width:0}
+.manager-name{font-size:13px;font-weight:500}
+.manager-unique{font-size:11px;color:var(--muted)}
+.btn-remove{padding:5px 12px;border-radius:6px;font-size:11px;font-weight:500;font-family:inherit;cursor:pointer;border:1px solid #fecaca;background:var(--red-l);color:var(--red);transition:all .15s}
+.btn-remove:hover{background:var(--red);color:#fff}
+.empty-msg{padding:20px;text-align:center;color:var(--muted);font-size:12px}
+
+.add-row{display:flex;gap:10px;padding:14px 16px;border-top:1px solid var(--border);background:#f9fafb}
+.add-row select{flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:12.5px;font-family:inherit;outline:none;cursor:pointer}
+.add-row select:focus{border-color:var(--accent)}
+.btn{padding:8px 18px;border-radius:8px;font-size:12.5px;font-weight:500;font-family:inherit;cursor:pointer;border:none;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 2px 6px rgba(37,99,235,.2)}
+.btn-primary:hover{background:var(--accent-h)}
+.btn-primary:disabled{background:#93c5fd;cursor:not-allowed;box-shadow:none}
+
+.status-bar{padding:10px 16px;font-size:12px;border-radius:8px;margin-bottom:16px;display:none}
+.status-bar.success{display:block;background:var(--green-l);border:1px solid #bbf7d0;color:var(--green)}
+.status-bar.error{display:block;background:var(--red-l);border:1px solid #fecaca;color:var(--red)}
+
+.superadmin-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;background:var(--accent-l);color:var(--accent)}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-left">
+        <div class="logo">AD</div>
+        <h1>Admin Panel</h1>
+    </div>
+    <a href="/" class="back-link">&larr; Back to Dashboard</a>
+</div>
+
+<div class="container">
+    <div id="statusBar" class="status-bar"></div>
+
+    <div class="section-title">Role Management</div>
+    <p class="info-text">
+        As superadmin (<strong>{{ superadmin }}</strong>), you can assign manager/lead roles to TFS users.
+        Managers can view team data and manage team members.
+    </p>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Current Managers</h3>
+            <span class="superadmin-badge">Superadmin: {{ superadmin }}</span>
+        </div>
+        <div class="manager-list" id="managerList">
+            <div class="empty-msg">Loading...</div>
+        </div>
+        <div class="add-row">
+            <select id="addUserSelect">
+                <option value="">Loading TFS users...</option>
+            </select>
+            <button class="btn btn-primary" onclick="addManager()" id="addBtn" disabled>Add Manager</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let managers = [];
+let allUsers = [];
+
+async function loadData() {
+    // Load current managers
+    try {
+        const r = await fetch('/api/admin/managers');
+        const d = await r.json();
+        managers = d.managers || [];
+        renderManagers();
+    } catch (e) {
+        showStatus('Failed to load managers: ' + e.message, 'error');
+    }
+
+    // Load TFS users for the dropdown
+    try {
+        const r = await fetch('/api/tfs-users');
+        const d = await r.json();
+        allUsers = d.users || [];
+        renderUserDropdown();
+    } catch (e) {
+        document.getElementById('addUserSelect').innerHTML = '<option value="">Failed to load</option>';
+    }
+}
+
+function renderManagers() {
+    const list = document.getElementById('managerList');
+    if (!managers.length) {
+        list.innerHTML = '<div class="empty-msg">No managers assigned yet. Add one below.</div>';
+        return;
+    }
+    let html = '';
+    for (const m of managers) {
+        const initials = m.displayName.split(/[\s.]+/).map(w => w[0] || '').slice(0, 2).join('');
+        html += `<div class="manager-row">
+            <div class="manager-avatar">${initials}</div>
+            <div class="manager-info">
+                <div class="manager-name">${m.displayName}</div>
+                <div class="manager-unique">${m.uniqueName || '---'}</div>
+            </div>
+            <button class="btn-remove" onclick="removeManager('${(m.uniqueName || '').replace(/\\/g, '\\\\')}')">Remove</button>
+        </div>`;
+    }
+    list.innerHTML = html;
+}
+
+function renderUserDropdown() {
+    const sel = document.getElementById('addUserSelect');
+    const managerUniques = new Set(managers.map(m => (m.uniqueName || '').toLowerCase()));
+    const available = allUsers.filter(u => !managerUniques.has((u.uniqueName || '').toLowerCase()));
+
+    let html = '<option value="">-- Select a user to add as manager --</option>';
+    for (const u of available) {
+        const label = u.displayName + (u.uniqueName ? ' (' + u.uniqueName + ')' : '');
+        html += `<option value="${u.uniqueName || u.displayName}" data-display="${u.displayName}" data-id="${u.id || ''}">${label}</option>`;
+    }
+    sel.innerHTML = html;
+    document.getElementById('addBtn').disabled = false;
+}
+
+async function addManager() {
+    const sel = document.getElementById('addUserSelect');
+    const val = sel.value;
+    if (!val) return;
+
+    const opt = sel.options[sel.selectedIndex];
+    const displayName = opt.getAttribute('data-display');
+    const id = opt.getAttribute('data-id') || '';
+
+    try {
+        const r = await fetch('/api/admin/managers', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({uniqueName: val, displayName: displayName, id: id})
+        });
+        const d = await r.json();
+        if (d.ok) {
+            managers = d.managers;
+            renderManagers();
+            renderUserDropdown();
+            showStatus('Manager added successfully', 'success');
+        } else {
+            showStatus(d.error || 'Failed to add', 'error');
+        }
+    } catch (e) {
+        showStatus('Error: ' + e.message, 'error');
+    }
+}
+
+async function removeManager(uniqueName) {
+    if (!confirm('Remove this manager role?')) return;
+    try {
+        const r = await fetch('/api/admin/managers', {
+            method: 'DELETE',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({uniqueName: uniqueName})
+        });
+        const d = await r.json();
+        if (d.ok) {
+            managers = d.managers;
+            renderManagers();
+            renderUserDropdown();
+            showStatus('Manager removed', 'success');
+        } else {
+            showStatus(d.error || 'Failed to remove', 'error');
+        }
+    } catch (e) {
+        showStatus('Error: ' + e.message, 'error');
+    }
+}
+
+function showStatus(msg, type) {
+    const bar = document.getElementById('statusBar');
+    bar.textContent = msg;
+    bar.className = 'status-bar ' + type;
+    if (type === 'success') setTimeout(() => bar.className = 'status-bar', 3000);
+}
+
+loadData();
+</script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+{
+  "superadmin": "TFS\\subbareddy",
+  "managers": [
+    {
+      "uniqueName": "TFS\\naresh",
+      "displayName": "naresh",
+      "id": "5775b821-db7f-48cc-9f32-dc52e1446fca"
+    },
+    {
+      "uniqueName": "TFS\\sowjanya",
+      "displayName": "sowjanya",
+      "id": "0bc1667a-24c8-49fd-b158-694177b1efe1"
+    },
+    {
+      "uniqueName": "TFS\\sudhakiran",
+      "displayName": "sudhakiran K",
+      "id": "91690fae-a54b-4ec7-bdfd-810953ae8eed"
+    },
+    {
+      "uniqueName": "TFS\\avinash",
+      "displayName": "avinash",
+      "id": "7f8b469e-cbf7-47ce-9218-100fef23abd2"
+    },
+    {
+      "uniqueName": "TFS\\rajini",
+      "displayName": "rajini",
+      "id": "1f7574ed-1afd-4fac-9ae1-6e830c06c9db"
+    },
+    {
+      "uniqueName": "TFS\\swaroopach",
+      "displayName": "Swaroopa Ch",
+      "id": "b0a0d09c-04c5-4bc5-b4ea-18de428272ce"
+    },
+    {
+      "uniqueName": "TFS\\rajuk",
+      "displayName": "Raju Kallubandi",
+      "id": "73caf748-591e-4f98-8ae2-faf2c64f40c2"
+    },
+    {
+      "uniqueName": "TFS\\ramanakumar",
+      "displayName": "Ramana Kumar",
+      "id": "187e2654-8144-45b3-a384-9010d40a58d0"
+    },
+    {
+      "uniqueName": "TFS\\srilakshmi",
+      "displayName": "SriLakshmiA",
+      "id": "c8767845-c6a5-4880-95d9-97daf9d8c5f9"
+    },
+    {
+      "uniqueName": "TFS\\Manohar.A",
+      "displayName": "Aluvala Manohar",
+      "id": "1c3167dd-af71-497d-a954-d3160f8ac465"
+    },
+    {
+      "uniqueName": "TFS\\guru.prasad",
+      "displayName": "Sadham Guru Prasad",
+      "id": "157f0a04-d4fa-4a68-b72d-b60a9a9dcd07"
+    },
+    {
+      "uniqueName": "TFS\\Chandrika",
+      "displayName": "Muppalla Chandrika",
+      "id": "19eb27eb-6cd6-4bd4-a6a3-4ed76bb6055e"
+    }
+  ],
+  "superadmin_projects": []
+}
