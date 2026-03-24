@@ -816,6 +816,47 @@ function renderDashboard(){
         h+=`</div></div>`;
     }
 
+    // ── TFS Not Updated ──
+    const sprintDay=di0.current_day||di0.elapsed_days||1;
+    const hrsPerDay=6;
+    const expectedCompleted=(sprintDay-1)*hrsPerDay;
+    if(sprintDay>1){
+        const notUpdated=[];
+        for(const m of D.members){
+            if(m.task_count===0)continue;
+            // Check if member is on leave today
+            const todayKey=(SD.today||new Date().toISOString().substring(0,10));
+            const isOff=(m.off_dates||[]).some(r=>{
+                const s=new Date(r.start).toISOString().substring(0,10);
+                const e=new Date(r.end).toISOString().substring(0,10);
+                return todayKey>=s&&todayKey<=e;
+            });
+            if(isOff)continue;
+            const memberCompleted=m.completed_hours||0;
+            const deficit=expectedCompleted-memberCompleted;
+            if(deficit>0)notUpdated.push({member:m.member,completed:memberCompleted,expected:expectedCompleted,deficit:deficit,remaining:m.remaining_hours||0,tasks:m.task_count||0});
+        }
+        if(notUpdated.length){
+            notUpdated.sort((a,b)=>b.deficit-a.deficit);
+            h+=`<div class="section"><div class="section-head"><h3>⚠ TFS Not Updated</h3><span class="count" style="color:var(--orange)">${notUpdated.length} members behind</span></div>`;
+            h+=`<div style="font-size:11px;color:var(--sec);margin-bottom:8px">Expected at least <b>${expectedCompleted}h</b> completed by Day ${sprintDay} (${hrsPerDay}h/day × ${sprintDay-1} previous day${sprintDay>2?'s':''})</div>`;
+            h+=`<div class="tbl-wrap"><table><thead><tr><th>Member</th><th>Expected</th><th>Completed</th><th>Behind By</th><th>Tasks</th><th>Remaining</th></tr></thead><tbody>`;
+            for(const u of notUpdated){
+                const severity=u.deficit>=12?'var(--red-l)':u.deficit>=6?'#fff7ed':'';
+                h+=`<tr style="${severity?'background:'+severity:''}">`;
+                h+=`<td style="font-weight:500">${esc(u.member)}</td>`;
+                h+=`<td style="color:var(--green)">${u.expected}h</td>`;
+                h+=`<td style="font-weight:600;color:${u.completed>0?'var(--green)':'var(--red)'}">`;
+                h+=`${u.completed}h</td>`;
+                h+=`<td style="font-weight:700;color:var(--red)">-${u.deficit}h</td>`;
+                h+=`<td>${u.tasks}</td>`;
+                h+=`<td>${u.remaining}h</td>`;
+                h+=`</tr>`;
+            }
+            h+=`</tbody></table></div></div>`;
+        }
+    }
+
     // ── Team Stuck On ──
     const todayMs=new Date(SD.today||Date.now()).getTime();
     const stuckMembers=[];
