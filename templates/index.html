@@ -154,9 +154,14 @@ tbody tr:hover{background:#fafbfc}
 .sprint-bar-legend .leg-dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:middle}
 
 /* Sprint countdown */
-.countdown{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px 18px;box-shadow:var(--shadow);display:flex;align-items:center;gap:14px}
-.countdown-num{font-size:28px;font-weight:700;letter-spacing:-1px;line-height:1}
-.countdown-label{font-size:11px;color:var(--sec);font-weight:500}
+.dash-stats{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:16px}
+.countdown{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:10px 12px;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px;overflow:hidden}
+.countdown-num{font-size:22px;font-weight:700;letter-spacing:-1px;line-height:1;white-space:nowrap;flex-shrink:0}
+.cd-title{font-size:11px;font-weight:600;white-space:nowrap}
+.countdown-label{font-size:10px;color:var(--sec);font-weight:500;white-space:nowrap}
+@media(max-width:1400px){.dash-stats{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:900px){.dash-stats{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.dash-stats{grid-template-columns:repeat(2,1fr)}.countdown-num{font-size:18px}}
 
 /* PBI mini cards */
 .pbi-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
@@ -639,20 +644,14 @@ function renderDashboard(){
     const progPct=s.total_tasks?Math.round(prog/s.total_tasks*100):0;
 
     // ── 4. Sprint Countdown + 6. Bug Count + Stats ──
-    let h=`<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">`;
-    // Countdown
-    h+=`<div class="countdown" style="flex:1;min-width:140px">
-        <div class="countdown-num" style="color:${di0.remaining_days<=1?'var(--red)':di0.remaining_days<=2?'var(--orange)':'var(--accent)'}">${di0.remaining_days||0}</div>
-        <div><div style="font-size:13px;font-weight:600">Days Left</div><div class="countdown-label">Day ${di0.current_day||di0.elapsed_days||0} of ${di0.total_days||'?'}</div></div>
-    </div>`;
-    // Stats
-    h+=`<div class="countdown" style="flex:1;min-width:100px"><div class="countdown-num" style="color:var(--accent)">${s.total_tasks}</div><div><div style="font-size:13px;font-weight:600">Tasks</div><div class="countdown-label">${s.total_pbis} PBIs</div></div></div>`;
-    h+=`<div class="countdown" style="flex:1;min-width:100px"><div class="countdown-num" style="color:var(--green)">${done}</div><div><div style="font-size:13px;font-weight:600">Done</div><div class="countdown-label">${donePct}%</div></div></div>`;
-    h+=`<div class="countdown" style="flex:1;min-width:100px"><div class="countdown-num" style="color:var(--accent)">${prog}</div><div><div style="font-size:13px;font-weight:600">In Progress</div><div class="countdown-label">${progPct}%</div></div></div>`;
-    h+=`<div class="countdown" style="flex:1;min-width:100px"><div class="countdown-num">${todo>0?todo:0}</div><div><div style="font-size:13px;font-weight:600">To Do</div><div class="countdown-label">${s.total_remaining||0}h remaining</div></div></div>`;
-    h+=`<div class="countdown" style="flex:1;min-width:100px;${s.total_completed>0?'border-color:#a7f3d0;background:var(--green-l)':''}"><div class="countdown-num" style="color:var(--green)">${s.total_completed||0}h</div><div><div style="font-size:13px;font-weight:600">Completed</div><div class="countdown-label">${s.total_original?Math.round(s.total_completed/s.total_original*100):0}% of planned</div></div></div>`;
-    // Bug count badge
-    h+=`<div class="countdown" style="flex:1;min-width:100px;${activeBugs?'border-color:#fecaca;background:var(--red-l)':''}"><div class="countdown-num" style="color:${activeBugs?'var(--red)':'var(--green)'}"> ${activeBugs}</div><div><div style="font-size:13px;font-weight:600">Active Bugs</div><div class="countdown-label">${(D.bugs||[]).length} total</div></div></div>`;
+    let h=`<div class="dash-stats">`;
+    h+=`<div class="countdown"><div class="countdown-num" style="color:${di0.remaining_days<=1?'var(--red)':di0.remaining_days<=2?'var(--orange)':'var(--accent)'}">${di0.remaining_days||0}</div><div><div class="cd-title">Days Left</div><div class="countdown-label">Day ${di0.current_day||di0.elapsed_days||0} of ${di0.total_days||'?'}</div></div></div>`;
+    h+=`<div class="countdown"><div class="countdown-num" style="color:var(--accent)">${s.total_tasks}</div><div><div class="cd-title">Tasks</div><div class="countdown-label">${s.total_pbis} PBIs</div></div></div>`;
+    h+=`<div class="countdown"><div class="countdown-num" style="color:var(--green)">${done}</div><div><div class="cd-title">Done</div><div class="countdown-label">${donePct}%</div></div></div>`;
+    h+=`<div class="countdown"><div class="countdown-num" style="color:var(--accent)">${prog}</div><div><div class="cd-title">In Progress</div><div class="countdown-label">${progPct}%</div></div></div>`;
+    h+=`<div class="countdown"><div class="countdown-num">${todo>0?todo:0}</div><div><div class="cd-title">To Do</div><div class="countdown-label">${s.total_remaining||0}h</div></div></div>`;
+    h+=`<div class="countdown" style="${s.total_completed>0?'border-color:#a7f3d0;background:var(--green-l)':''}"><div class="countdown-num" style="color:var(--green)">${s.total_completed||0}h</div><div><div class="cd-title">Completed</div><div class="countdown-label">${s.total_original?Math.round(s.total_completed/s.total_original*100):0}%</div></div></div>`;
+    h+=`<div class="countdown" style="${activeBugs?'border-color:#fecaca;background:var(--red-l)':''}"><div class="countdown-num" style="color:${activeBugs?'var(--red)':'var(--green)'}"> ${activeBugs}</div><div><div class="cd-title">Bugs</div><div class="countdown-label">${(D.bugs||[]).length} total</div></div></div>`;
     h+=`</div>`;
 
     // ── 1. Sprint Progress Bar ──
