@@ -1,0 +1,29 @@
+{
+  "chats": {
+    "725eacd6-cd21-42d2-ba81-d733f11f7716": {
+      "id": "725eacd6-cd21-42d2-ba81-d733f11f7716",
+      "title": "hey",
+      "updated_at": "2026-03-24T07:03:27.994628",
+      "ui_messages": [
+        {
+          "role": "user",
+          "content": "hey"
+        },
+        {
+          "role": "assistant",
+          "content": "Hello! How can I assist you today?"
+        }
+      ],
+      "api_messages": [
+        {
+          "role": "user",
+          "content": "hey"
+        },
+        {
+          "role": "assistant",
+          "content": "Hello! How can I assist you today?"
+        }
+      ]
+    }
+  }
+}

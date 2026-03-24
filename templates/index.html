@@ -222,6 +222,26 @@ tbody tr:hover{background:#fafbfc}
 
 /* Chat */
 .chat-area{display:flex;flex-direction:column;position:absolute;inset:0;background:var(--bg)}
+.chat-layout{display:flex;flex:1;overflow:hidden}
+.chat-sidebar{width:220px;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.cs-header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border)}
+.cs-title{font-size:13px;font-weight:600}
+.cs-new{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--white);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--sec);transition:all .15s}
+.cs-new:hover{background:var(--accent-l);color:var(--accent);border-color:var(--accent)}
+.cs-list{flex:1;overflow-y:auto;padding:6px}
+.cs-list::-webkit-scrollbar{width:3px}.cs-list::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}
+.cs-item{display:flex;align-items:center;gap:8px;width:100%;background:transparent;border:none;padding:8px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit;color:var(--sec);text-align:left;transition:all .12s;position:relative}
+.cs-item:hover{background:var(--bg);color:var(--text)}
+.cs-item.active{background:var(--accent-l);color:var(--accent)}
+.cs-item-title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:450}
+.cs-item-time{font-size:9px;color:var(--muted);white-space:nowrap}
+.cs-item-actions{display:none;gap:2px;position:absolute;right:4px;top:50%;transform:translateY(-50%);background:var(--white);border-radius:4px;padding:2px}
+.cs-item:hover .cs-item-actions{display:flex}
+.cs-act{width:22px;height:22px;border:none;background:transparent;cursor:pointer;border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;transition:all .12s}
+.cs-act:hover{background:var(--bg);color:var(--text)}
+.cs-act.del:hover{color:var(--red);background:var(--red-l)}
+.cs-empty{text-align:center;padding:20px 14px;color:var(--muted);font-size:11px;line-height:1.6}
+.chat-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
 .chat-msgs{flex:1;overflow-y:auto;padding:24px 28px;display:flex;flex-direction:column;gap:16px}
 .chat-msgs::-webkit-scrollbar{width:4px}.chat-msgs::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:4px}
 .chat-welcome{text-align:center;margin:auto 0;padding:40px 20px}
@@ -352,18 +372,31 @@ tbody tr:hover{background:#fafbfc}
 
         <!-- Chat (full-height flex layout, input pinned at bottom) -->
         <div id="chatView" class="chat-area">
-            <div class="chat-msgs" id="chatMsgs">
-                <div class="chat-welcome" id="chatWelcome">
-                    <h2>AI Agent</h2>
-                    <p>Ask me to create PBIs, tasks, update statuses, change assignees, or run complex queries.</p>
+            <div class="chat-layout">
+                <!-- Chat History Sidebar -->
+                <div class="chat-sidebar" id="chatSidebar">
+                    <div class="cs-header">
+                        <span class="cs-title">Chats</span>
+                        <button class="cs-new" onclick="newChat()" title="New Chat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                    </div>
+                    <div class="cs-list" id="chatList"></div>
                 </div>
-            </div>
-            <div class="input-bar">
-                <div class="input-row">
-                    <textarea id="userInput" placeholder="Ask AI — create PBIs, update tasks, complex queries..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,140)+'px'"></textarea>
-                    <button class="btn-send" id="sendBtn" onclick="sendMsg()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+                <!-- Chat Messages -->
+                <div class="chat-main">
+                    <div class="chat-msgs" id="chatMsgs">
+                        <div class="chat-welcome" id="chatWelcome">
+                            <h2>AI Agent</h2>
+                            <p>Ask me to create PBIs, tasks, update statuses, change assignees, or run complex queries.</p>
+                        </div>
+                    </div>
+                    <div class="input-bar">
+                        <div class="input-row">
+                            <textarea id="userInput" placeholder="Ask AI — create PBIs, update tasks, complex queries..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,140)+'px'"></textarea>
+                            <button class="btn-send" id="sendBtn" onclick="sendMsg()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+                        </div>
+                        <div class="ai-note">Only this chat uses OpenAI. Dashboard + sidebar = direct TFS queries, zero AI cost.</div>
+                    </div>
                 </div>
-                <div class="ai-note">Only this chat uses OpenAI. Dashboard + sidebar = direct TFS queries, zero AI cost.</div>
             </div>
         </div>
     </div>
@@ -610,13 +643,14 @@ function renderDashboard(){
     // Countdown
     h+=`<div class="countdown" style="flex:1;min-width:140px">
         <div class="countdown-num" style="color:${di0.remaining_days<=1?'var(--red)':di0.remaining_days<=2?'var(--orange)':'var(--accent)'}">${di0.remaining_days||0}</div>
-        <div><div style="font-size:13px;font-weight:600">Days Left</div><div class="countdown-label">Day ${di0.elapsed_days||0} of ${di0.total_days||'?'}</div></div>
+        <div><div style="font-size:13px;font-weight:600">Days Left</div><div class="countdown-label">Day ${di0.current_day||di0.elapsed_days||0} of ${di0.total_days||'?'}</div></div>
     </div>`;
     // Stats
     h+=`<div class="countdown" style="flex:1;min-width:100px"><div class="countdown-num" style="color:var(--accent)">${s.total_tasks}</div><div><div style="font-size:13px;font-weight:600">Tasks</div><div class="countdown-label">${s.total_pbis} PBIs</div></div></div>`;
     h+=`<div class="countdown" style="flex:1;min-width:100px"><div class="countdown-num" style="color:var(--green)">${done}</div><div><div style="font-size:13px;font-weight:600">Done</div><div class="countdown-label">${donePct}%</div></div></div>`;
     h+=`<div class="countdown" style="flex:1;min-width:100px"><div class="countdown-num" style="color:var(--accent)">${prog}</div><div><div style="font-size:13px;font-weight:600">In Progress</div><div class="countdown-label">${progPct}%</div></div></div>`;
     h+=`<div class="countdown" style="flex:1;min-width:100px"><div class="countdown-num">${todo>0?todo:0}</div><div><div style="font-size:13px;font-weight:600">To Do</div><div class="countdown-label">${s.total_remaining||0}h remaining</div></div></div>`;
+    h+=`<div class="countdown" style="flex:1;min-width:100px;${s.total_completed>0?'border-color:#a7f3d0;background:var(--green-l)':''}"><div class="countdown-num" style="color:var(--green)">${s.total_completed||0}h</div><div><div style="font-size:13px;font-weight:600">Completed</div><div class="countdown-label">${s.total_original?Math.round(s.total_completed/s.total_original*100):0}% of planned</div></div></div>`;
     // Bug count badge
     h+=`<div class="countdown" style="flex:1;min-width:100px;${activeBugs?'border-color:#fecaca;background:var(--red-l)':''}"><div class="countdown-num" style="color:${activeBugs?'var(--red)':'var(--green)'}"> ${activeBugs}</div><div><div style="font-size:13px;font-weight:600">Active Bugs</div><div class="countdown-label">${(D.bugs||[]).length} total</div></div></div>`;
     h+=`</div>`;
@@ -714,9 +748,9 @@ function renderDashboard(){
 
     // ── Work By Member — Hierarchical Grid with Progress ──
     const di=D.day_info||{};
-    h+=`<div class="section"><div class="section-head"><h3>Work By Member</h3><span class="count">Day ${di.elapsed_days||0} of ${di.total_days||'?'}<span class="sprint-day-info"> · ${di.remaining_days||0} days remaining</span></span></div>`;
+    h+=`<div class="section"><div class="section-head"><h3>Work By Member</h3><span class="count">Day ${di.current_day||di.elapsed_days||0} of ${di.total_days||'?'}<span class="sprint-day-info"> · ${di.remaining_days||0} days remaining</span></span></div>`;
     h+=`<div style="margin-bottom:10px"><input type="text" id="dashMemberSearch" oninput="filterDashMembers()" placeholder="Search member..." style="font-size:12px;font-family:inherit;border:1px solid var(--border);border-radius:6px;padding:6px 10px;width:220px;background:var(--white);outline:none"></div>`;
-    h+=`<div class="tbl-wrap"><table><thead><tr><th style="width:30px"></th><th>Name</th><th>Progress</th><th>In Progress</th><th>Done</th><th>To Do</th><th>Remaining</th></tr></thead><tbody>`;
+    h+=`<div class="tbl-wrap"><table><thead><tr><th style="width:30px"></th><th>Name</th><th>Progress</th><th>In Progress</th><th>Done</th><th>To Do</th><th>Planned</th><th>Remaining</th><th>Completed</th></tr></thead><tbody>`;
 
     for(let i=0;i<D.members.length;i++){
         const m=D.members[i];
@@ -744,15 +778,19 @@ function renderDashboard(){
         h+=`<td><span class="cnt prog">${m.in_progress_count}</span></td>`;
         h+=`<td><span class="cnt dn">${m.done_count}</span></td>`;
         h+=`<td><span class="cnt nw">${m.new_count}</span></td>`;
+        h+=`<td>${m.total_allocated_hours}h</td>`;
         h+=`<td>${m.remaining_hours}h</td>`;
+        h+=`<td style="color:${m.completed_hours>0?'var(--green)':'var(--muted)'}"><b>${m.completed_hours}h</b></td>`;
         h+=`</tr>`;
 
         // Expandable child rows
         if(hasTasks){
-            const childTasks=(m.tasks||[]).filter(t=>isProg(t.state)||!isDone(t.state));
-            h+=`<tr class="expand-row dash-member-row" data-member="${esc(m.member).toLowerCase()}" id="erow${i}"><td colspan="7"><table class="sub-table">`;
+            const childTasks=m.tasks||[];
+            h+=`<tr class="expand-row dash-member-row" data-member="${esc(m.member).toLowerCase()}" id="erow${i}"><td colspan="9"><table class="sub-table">`;
+            h+=`<tr style="background:#f0f1f3;font-weight:600;font-size:10px;color:var(--sec)"><td style="width:50px">ID</td><td>Task</td><td style="width:90px">State</td><td style="width:70px">Planned</td><td style="width:70px">Remaining</td><td style="width:70px">Completed</td></tr>`;
             for(const t of childTasks){
-                h+=`<tr><td style="width:50px">#${t.id}</td><td>${esc(t.title)}</td><td style="width:90px">${badge(t.state)}</td><td style="width:80px">${t.remaining_work||0}h</td></tr>`;
+                const planned=t.original_estimate||0;const rem=t.remaining_work||0;const comp=t.completed_work||0;
+                h+=`<tr><td style="width:50px">#${t.id}</td><td>${esc(t.title)}</td><td style="width:90px">${badge(t.state)}</td><td style="width:70px">${planned}h</td><td style="width:70px">${rem}h</td><td style="width:70px;color:${comp>0?'var(--green)':'var(--muted)'}">${comp}h</td></tr>`;
             }
             h+=`</table></td></tr>`;
         }
@@ -924,19 +962,21 @@ function showMember(name){
     try{
         // Find member from local data
         const m=D.members.find(m=>m.member===name);
-        const d={member:name,sprint:D.sprint.name||'',task_count:m?m.task_count:0,total_allocated_hours:m?m.total_allocated_hours:0,total_remaining_hours:m?m.remaining_hours:0,tasks:m?m.tasks.map(t=>({id:t.id,title:t.title,state:t.state,priority:t.priority,allocated_hours:t.original_estimate||t.remaining_work,remaining_hours:t.remaining_work})):[]};
+        const totalCompleted=m?m.completed_hours:0;
+        const d={member:name,sprint:D.sprint.name||'',task_count:m?m.task_count:0,total_allocated_hours:m?m.total_allocated_hours:0,total_remaining_hours:m?m.remaining_hours:0,total_completed:totalCompleted,tasks:m?m.tasks.map(t=>({id:t.id,title:t.title,state:t.state,priority:t.priority,planned:t.original_estimate||0,remaining_hours:t.remaining_work,completed:t.completed_work||0})):[]};
         // Render from local data
         let h=`<button class="back-btn" onclick="showView('dashboard')">← Back to Dashboard</button>
         <div class="detail-card"><h3>${esc(d.member)}</h3><div class="subtitle">${esc(d.sprint)} — ${d.task_count} tasks</div>
         <div class="stats" style="margin-bottom:16px">
             <div class="stat"><div class="stat-val">${d.task_count}</div><div class="stat-lbl">Tasks</div></div>
-            <div class="stat or"><div class="stat-val">${d.total_allocated_hours}h</div><div class="stat-lbl">Allocated</div></div>
+            <div class="stat or"><div class="stat-val">${d.total_allocated_hours}h</div><div class="stat-lbl">Planned</div></div>
             <div class="stat"><div class="stat-val">${d.total_remaining_hours}h</div><div class="stat-lbl">Remaining</div></div>
+            <div class="stat gr"><div class="stat-val">${d.total_completed}h</div><div class="stat-lbl">Completed</div></div>
         </div>`;
         if(!d.tasks.length){h+=`<p style="color:var(--muted)">No tasks assigned.</p>`}
         else{
-            h+=`<div class="tbl-wrap" style="border:none;box-shadow:none"><table><thead><tr><th>ID</th><th>Task</th><th>State</th><th>Allocated</th><th>Remaining</th></tr></thead><tbody>`;
-            for(const t of d.tasks)h+=`<tr><td>#${t.id}</td><td>${esc(t.title)}</td><td>${badge(t.state)}</td><td>${t.allocated_hours}h</td><td>${t.remaining_hours}h</td></tr>`;
+            h+=`<div class="tbl-wrap" style="border:none;box-shadow:none"><table><thead><tr><th>ID</th><th>Task</th><th>State</th><th>Planned</th><th>Remaining</th><th>Completed</th></tr></thead><tbody>`;
+            for(const t of d.tasks)h+=`<tr><td>#${t.id}</td><td>${esc(t.title)}</td><td>${badge(t.state)}</td><td>${t.planned}h</td><td>${t.remaining_hours}h</td><td style="color:${t.completed>0?'var(--green)':'var(--muted)'}"><b>${t.completed}h</b></td></tr>`;
             h+=`</tbody></table></div>`;
         }
         h+=`</div>`;dv.innerHTML=h;
@@ -959,16 +999,19 @@ return'<p>'+h+'</p>'}
 
 const cm=document.getElementById('chatMsgs');
 const cw=document.getElementById('chatWelcome');
+let currentChatId=null;
+let chatUiMessages=[];  // [{role:'user'|'assistant',content:'...',tool_calls:[]}]
 
-function addMsg(r,c){
+function addMsg(r,c,skipSave){
     if(cw)cw.style.display='none';
     const d=document.createElement('div');d.className='message '+r;
     const a=document.createElement('div');a.className='msg-av';a.textContent=r==='user'?'U':'AI';
     const b=document.createElement('div');b.className='msg-body';b.innerHTML=r==='user'?`<p>${esc(c)}</p>`:md(c);
     d.appendChild(a);d.appendChild(b);cm.appendChild(d);cm.scrollTop=cm.scrollHeight;
+    if(!skipSave)chatUiMessages.push({role:r==='user'?'user':'assistant',content:c});
 }
 
-function addTools(tc){
+function addTools(tc,skipSave){
     if(!tc||!tc.length)return;
     const c=document.createElement('div');c.className='tool-calls';
     for(const t of tc){
@@ -982,6 +1025,7 @@ function addTools(tc){
         c.appendChild(b);
     }
     cm.appendChild(c);cm.scrollTop=cm.scrollHeight;
+    if(!skipSave&&chatUiMessages.length)chatUiMessages[chatUiMessages.length-1].tool_calls=tc;
 }
 
 function showTyping(){
@@ -991,25 +1035,92 @@ function showTyping(){
 }
 function hideTyping(){const el=document.getElementById('typingEl');if(el)el.remove()}
 
+async function saveChat(){
+    if(!currentChatId||!chatUiMessages.length)return;
+    const firstUserMsg=chatUiMessages.find(m=>m.role==='user');
+    const title=firstUserMsg?firstUserMsg.content.substring(0,60):'Untitled Chat';
+    await fetch('/api/chat/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:currentChatId,title,ui_messages:chatUiMessages})});
+    loadChatList();
+}
+
+async function loadChatList(){
+    try{
+        const r=await fetch('/api/chat/list');
+        const chats=await r.json();
+        const cl=document.getElementById('chatList');
+        if(!chats.length){cl.innerHTML='<div class="cs-empty">No chat history yet.<br>Start a conversation!</div>';return}
+        let h='';
+        for(const c of chats){
+            const active=c.id===currentChatId?'active':'';
+            const time=c.updated_at?new Date(c.updated_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+new Date(c.updated_at).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}):'';
+            h+=`<div class="cs-item ${active}" onclick="loadChat('${c.id}')">
+                <span class="cs-item-title">${esc(c.title)}</span>
+                <span class="cs-item-time">${time}</span>
+                <div class="cs-item-actions">
+                    <button class="cs-act del" onclick="event.stopPropagation();deleteChat('${c.id}')" title="Delete">✕</button>
+                </div>
+            </div>`;
+        }
+        cl.innerHTML=h;
+    }catch(e){console.error('Failed to load chats',e)}
+}
+
+async function loadChat(chatId){
+    try{
+        const r=await fetch(`/api/chat/load/${chatId}`);
+        if(!r.ok)return;
+        const data=await r.json();
+        currentChatId=chatId;
+        chatUiMessages=data.ui_messages||[];
+        // Clear and re-render messages
+        cm.innerHTML='';
+        if(cw)cw.style.display='none';
+        for(const m of chatUiMessages){
+            addMsg(m.role==='user'?'user':'assistant',m.content,true);
+            if(m.tool_calls)addTools(m.tool_calls,true);
+        }
+        loadChatList();
+    }catch(e){console.error('Failed to load chat',e)}
+}
+
+async function deleteChat(chatId){
+    if(!confirm('Delete this chat?'))return;
+    await fetch(`/api/chat/delete/${chatId}`,{method:'DELETE'});
+    if(chatId===currentChatId)newChat();
+    loadChatList();
+}
+
+function newChat(){
+    currentChatId=null;
+    chatUiMessages=[];
+    cm.innerHTML='';
+    if(cw){cw.style.display='';cm.appendChild(cw)}
+    loadChatList();
+}
+
 let busy=false;
 async function sendMsg(){
     const inp=document.getElementById('userInput');
     const t=inp.value.trim();if(!t||busy)return;
     busy=true;document.getElementById('sendBtn').disabled=true;
     inp.value='';inp.style.height='auto';
+    if(!currentChatId)currentChatId=crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2);
     addMsg('user',t);showTyping();
     try{
-        const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t})});
+        const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t,chat_id:currentChatId})});
         hideTyping();
         if(!r.ok){const e=await r.json().catch(()=>({}));addMsg('assistant',e.error||'Something went wrong.');return}
-        const d=await r.json();addTools(d.tool_calls);if(d.reply)addMsg('assistant',d.reply);
+        const d=await r.json();
+        if(d.chat_id)currentChatId=d.chat_id;
+        addTools(d.tool_calls);if(d.reply)addMsg('assistant',d.reply);
+        saveChat();
     }catch(e){hideTyping();addMsg('assistant','Connection error. Is the server running?')}
     finally{busy=false;document.getElementById('sendBtn').disabled=false;inp.focus()}
 }
 
 function sendQuick(t){document.getElementById('userInput').value=t;showView('chat');setTimeout(()=>sendMsg(),100)}
 
-async function resetChat(){await fetch('/api/reset',{method:'POST'});cm.innerHTML='';location.reload()}
+async function resetChat(){newChat()}
 
 // ── Init ──
 // ── Page Loader — ALL from local D data (instant, no API calls) ──
@@ -1026,9 +1137,9 @@ function loadPage(page){
 
     if(page==='burndown'){
         const totalWork=s.total_original||s.total_remaining;const totalRem=s.total_remaining;
-        const days=di.total_days||1;const elapsed=di.elapsed_days||0;
+        const days=di.total_days||1;const elapsed=di.elapsed_days||0;const currentDay=di.current_day||elapsed;
         let h=`<button class="back-btn" onclick="showView('dashboard')">← Back</button><div class="detail-card"><h3>Burndown Chart</h3><div class="subtitle">${esc(sp.name||'')} — ${days} working days</div>`;
-        h+=`<div class="stats" style="margin-bottom:16px"><div class="stat"><div class="stat-val">${totalWork}h</div><div class="stat-lbl">Total Work</div></div><div class="stat or"><div class="stat-val">${totalRem}h</div><div class="stat-lbl">Remaining</div></div><div class="stat bl"><div class="stat-val">Day ${elapsed}/${days}</div><div class="stat-lbl">Sprint Day</div></div></div>`;
+        h+=`<div class="stats" style="margin-bottom:16px"><div class="stat"><div class="stat-val">${totalWork}h</div><div class="stat-lbl">Total Work</div></div><div class="stat or"><div class="stat-val">${totalRem}h</div><div class="stat-lbl">Remaining</div></div><div class="stat bl"><div class="stat-val">Day ${currentDay}/${days}</div><div class="stat-lbl">Sprint Day</div></div></div>`;
         const W=700,H=200,pad=40,maxH=totalWork||1;
         const xS=i=>(pad+(i/days)*(W-pad*2)),yS=v=>(H-pad-(v/maxH)*(H-pad*2));
         h+=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px">`;
@@ -1156,7 +1267,7 @@ function loadPage(page){
         const score=scores.reduce((a,b)=>a+b,0);const status=score>=75?'green':score>=50?'yellow':'red';const label=score>=75?'Healthy':score>=50?'At Risk':'Critical';
         let h=`<button class="back-btn" onclick="showView('dashboard')">← Back</button><div class="detail-card"><h3>Sprint Health</h3><div class="subtitle">${esc(sp.name||'')}</div>`;
         h+=`<div style="text-align:center;margin:20px 0"><div class="health-circle ${status}"><span>${score}</span><span class="health-label">${label}</span></div></div>`;
-        h+=`<div class="stats"><div class="stat"><div class="stat-val">${total}</div><div class="stat-lbl">Total Tasks</div></div><div class="stat gr"><div class="stat-val">${done}</div><div class="stat-lbl">Done</div></div><div class="stat or"><div class="stat-val">${inProg}</div><div class="stat-lbl">In Progress</div></div><div class="stat"><div class="stat-val">${nw}</div><div class="stat-lbl">New</div></div><div class="stat rd"><div class="stat-val">${stale}</div><div class="stat-lbl">Stale</div></div><div class="stat bl"><div class="stat-val">Day ${di.elapsed_days||0}/${di.total_days||0}</div><div class="stat-lbl">Sprint Day</div></div></div>`;
+        h+=`<div class="stats"><div class="stat"><div class="stat-val">${total}</div><div class="stat-lbl">Total Tasks</div></div><div class="stat gr"><div class="stat-val">${done}</div><div class="stat-lbl">Done</div></div><div class="stat or"><div class="stat-val">${inProg}</div><div class="stat-lbl">In Progress</div></div><div class="stat"><div class="stat-val">${nw}</div><div class="stat-lbl">New</div></div><div class="stat rd"><div class="stat-val">${stale}</div><div class="stat-lbl">Stale</div></div><div class="stat bl"><div class="stat-val">Day ${di.current_day||di.elapsed_days||0}/${di.total_days||0}</div><div class="stat-lbl">Sprint Day</div></div></div>`;
         if(reasons.length){h+=`<div class="health-reasons" style="margin-top:16px"><h4 style="font-size:12px;margin-bottom:6px">Issues:</h4><ul>`;for(const r of reasons)h+=`<li>${esc(r)}</li>`;h+=`</ul></div>`}
         else h+=`<p style="color:var(--green);margin-top:16px;font-size:13px">No issues detected — sprint is on track!</p>`;
         h+=`</div>`;dv.innerHTML=h;
@@ -1322,6 +1433,7 @@ function formatTime(dateStr){
     await loadSprints();
     loadSprintData();
     loadActivity();
+    loadChatList();
 })();
 </script>
 </body>

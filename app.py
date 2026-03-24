@@ -6,12 +6,24 @@ Only the chat input uses OpenAI for complex/custom questions.
 
 import json
 import os
+import re
 import sys
 from datetime import datetime, date
 from flask import Flask, render_template, request, jsonify, session
 from openai import OpenAI
 from dotenv import load_dotenv
 from azure_devops_client import AzureDevOpsClient
+
+
+def _parse_hours_from_title(title: str) -> float:
+    """Parse planned hours from task title pattern like 'Task name -3hrs' or '- 2.5 hrs' or '-1hr'."""
+    if not title:
+        return 0
+    # Match patterns: -3hrs, -2.5hrs, -1hr, - 3 hrs, -3h, -0.5hrs
+    m = re.search(r'-\s*(\d+(?:\.\d+)?)\s*h(?:rs?)?(?:\s|$)', title, re.IGNORECASE)
+    if m:
+        return float(m.group(1))
+    return 0
 
 load_dotenv()
 
@@ -230,10 +242,19 @@ def _get_sprint_day_info(sprint_info: dict) -> dict:
     remaining_days = max(0, total_days - elapsed)
     pct = round((elapsed / total_days) * 100, 1)
 
+    # Current day = which sprint day we're on (1-based)
+    if today < start:
+        current_day = 0
+    elif today > end:
+        current_day = total_days
+    else:
+        current_day = elapsed + 1  # today is the next day after elapsed
+
     return {
         "total_days": total_days,
         "elapsed_days": elapsed,
         "remaining_days": remaining_days,
+        "current_day": min(current_day, total_days),
         "pct_elapsed": pct,
     }
 
@@ -760,17 +781,34 @@ def api_sprint_data():
             if isinstance(changed_by, dict):
                 changed_by = changed_by.get("displayName", "")
 
+            title = f.get("System.Title", "")
+            tfs_original = f.get("Microsoft.VSTS.Scheduling.OriginalEstimate", 0) or 0
+            tfs_completed = f.get("Microsoft.VSTS.Scheduling.CompletedWork", 0) or 0
+            remaining = f.get("Microsoft.VSTS.Scheduling.RemainingWork", 0) or 0
+
+            # Parse planned hours from title if TFS original estimate is empty
+            parsed_hours = _parse_hours_from_title(title)
+            original_estimate = tfs_original if tfs_original else parsed_hours
+
+            # Calculate completed: prefer TFS value, else derive from original - remaining
+            if tfs_completed:
+                completed_work = tfs_completed
+            elif original_estimate and remaining < original_estimate:
+                completed_work = round(original_estimate - remaining, 2)
+            else:
+                completed_work = 0
+
             items.append({
                 "id": wi["id"],
                 "type": f.get("System.WorkItemType"),
-                "title": f.get("System.Title"),
+                "title": title,
                 "state": f.get("System.State"),
                 "assigned_to": display_name,
                 "assigned_unique": a_unique,
                 "assigned_id": a_id,
-                "original_estimate": f.get("Microsoft.VSTS.Scheduling.OriginalEstimate", 0) or 0,
-                "remaining_work": f.get("Microsoft.VSTS.Scheduling.RemainingWork", 0) or 0,
-                "completed_work": f.get("Microsoft.VSTS.Scheduling.CompletedWork", 0) or 0,
+                "original_estimate": original_estimate,
+                "remaining_work": remaining,
+                "completed_work": completed_work,
                 "priority": f.get("Microsoft.VSTS.Common.Priority"),
                 "severity": f.get("Microsoft.VSTS.Common.Severity"),
                 "changed_date": f.get("System.ChangedDate", ""),
@@ -1693,6 +1731,34 @@ def execute_tool(name: str, args: dict) -> str:
 
 
 conversations = {}
+CHAT_HISTORY_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "chat_history.json")
+
+
+def _load_chat_history():
+    if os.path.exists(CHAT_HISTORY_FILE):
+        try:
+            with open(CHAT_HISTORY_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {"chats": {}}
+    return {"chats": {}}
+
+
+def _save_chat_history(data):
+    with open(CHAT_HISTORY_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+
+def _save_chat_session(chat_id, title, ui_messages, api_messages):
+    history = _load_chat_history()
+    history["chats"][chat_id] = {
+        "id": chat_id,
+        "title": title,
+        "updated_at": datetime.now().isoformat(),
+        "ui_messages": ui_messages,
+        "api_messages": [m for m in api_messages if m.get("role") != "system"],
+    }
+    _save_chat_history(history)
 
 
 def get_messages(session_id: str) -> list:
@@ -1708,12 +1774,15 @@ def chat():
 
     data = request.get_json()
     user_message = data.get("message", "").strip()
+    chat_id = data.get("chat_id", "")
     if not user_message:
         return jsonify({"error": "Empty message"}), 400
 
-    session_id = session.get("session_id", os.urandom(16).hex())
-    session["session_id"] = session_id
-    messages = get_messages(session_id)
+    if not chat_id:
+        chat_id = os.urandom(16).hex()
+
+    session["session_id"] = chat_id
+    messages = get_messages(chat_id)
     messages.append({"role": "user", "content": user_message})
 
     tool_calls_log = []
@@ -1735,7 +1804,66 @@ def chat():
             tool_calls_log.append({"tool": tc.function.name, "result": json.loads(result)})
             messages.append({"role": "tool", "tool_call_id": tc.id, "content": result})
 
-    return jsonify({"reply": msg.content or "", "tool_calls": tool_calls_log})
+    return jsonify({"reply": msg.content or "", "tool_calls": tool_calls_log, "chat_id": chat_id})
+
+
+@app.route("/api/chat/save", methods=["POST"])
+def save_chat():
+    data = request.get_json()
+    chat_id = data.get("chat_id", "")
+    title = data.get("title", "Untitled Chat")
+    ui_messages = data.get("ui_messages", [])
+    if not chat_id:
+        return jsonify({"error": "No chat_id"}), 400
+    api_messages = conversations.get(chat_id, [])
+    _save_chat_session(chat_id, title, ui_messages, api_messages)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/chat/list")
+def list_chats():
+    history = _load_chat_history()
+    chats = []
+    for cid, c in history.get("chats", {}).items():
+        chats.append({"id": c["id"], "title": c.get("title", "Untitled"), "updated_at": c.get("updated_at", "")})
+    chats.sort(key=lambda x: x.get("updated_at", ""), reverse=True)
+    return jsonify(chats)
+
+
+@app.route("/api/chat/load/<chat_id>")
+def load_chat(chat_id):
+    history = _load_chat_history()
+    c = history.get("chats", {}).get(chat_id)
+    if not c:
+        return jsonify({"error": "Chat not found"}), 404
+    # Restore API messages into conversations memory
+    conversations[chat_id] = [{"role": "system", "content": _build_system_prompt()}] + c.get("api_messages", [])
+    return jsonify({"id": c["id"], "title": c.get("title", ""), "ui_messages": c.get("ui_messages", [])})
+
+
+@app.route("/api/chat/delete/<chat_id>", methods=["DELETE"])
+def delete_chat(chat_id):
+    history = _load_chat_history()
+    if chat_id in history.get("chats", {}):
+        del history["chats"][chat_id]
+        _save_chat_history(history)
+    if chat_id in conversations:
+        del conversations[chat_id]
+    return jsonify({"ok": True})
+
+
+@app.route("/api/chat/rename", methods=["POST"])
+def rename_chat():
+    data = request.get_json()
+    chat_id = data.get("chat_id", "")
+    title = data.get("title", "").strip()
+    if not chat_id or not title:
+        return jsonify({"error": "Missing chat_id or title"}), 400
+    history = _load_chat_history()
+    if chat_id in history.get("chats", {}):
+        history["chats"][chat_id]["title"] = title
+        _save_chat_history(history)
+    return jsonify({"ok": True})
 
 
 @app.route("/api/reset", methods=["POST"])
