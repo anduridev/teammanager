@@ -144,8 +144,11 @@ def save_manager_team(user: dict, members: list[dict]):
             return
 
 
-def get_manager_projects(user: dict | None = None) -> list[str]:
-    """Get the projects a manager is tracking. Empty list = all projects."""
+def get_manager_projects(user: dict | None = None) -> list:
+    """Get the project+sprint combos a manager is tracking.
+    Returns list of dicts: [{"project": "...", "sprint": "..."}]
+    or legacy list of strings (backward compatible).
+    """
     if user is None:
         user = get_current_user()
     if not user:
@@ -162,8 +165,11 @@ def get_manager_projects(user: dict | None = None) -> list[str]:
     return []
 
 
-def save_manager_projects(user: dict, projects: list[str]):
-    """Save project list for a specific manager."""
+def save_manager_projects(user: dict, projects: list):
+    """Save project+sprint list for a specific manager.
+    Accepts list of dicts: [{"project": "...", "sprint": "..."}]
+    or list of strings (backward compatible).
+    """
     config = load_app_config()
     unique = user.get("uniqueName", "")
 

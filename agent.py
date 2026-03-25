@@ -1,5 +1,5 @@
 """
-Azure DevOps Agent — powered by OpenAI API.
+ArthaFin Agent — powered by OpenAI API.
 
 An interactive agent that creates PBIs, tasks, updates statuses,
 remaining hours, and assignees in Azure DevOps / TFS using natural language.
@@ -367,7 +367,7 @@ Be conversational and helpful. If the user's request is unclear, ask clarifying 
 def run_agent():
     """Run the interactive agent loop."""
     print("=" * 60)
-    print("  Azure DevOps Agent")
+    print("  ArthaFin Agent")
     print("  Powered by OpenAI GPT-4o")
     print("=" * 60)
     print()

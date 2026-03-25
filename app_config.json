@@ -62,5 +62,14 @@
       "id": "19eb27eb-6cd6-4bd4-a6a3-4ed76bb6055e"
     }
   ],
-  "superadmin_projects": []
+  "superadmin_projects": [
+    {
+      "project": "Digital Bank",
+      "sprint": "Digital Bank\\Sprint 77"
+    },
+    {
+      "project": "AI Developer Training",
+      "sprint": "AI Developer Training\\Sprint 1"
+    }
+  ]
 }

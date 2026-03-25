@@ -1,4 +1,4 @@
-"""Azure DevOps Agent — Flask web app.
+"""ArthaFin — Flask web app.
 Thin routing layer. Business logic lives in analytics.py, chat.py, helpers.py.
 """
 
@@ -331,8 +331,31 @@ def api_save_selected_users():
 @app.route("/api/sprints")
 @login_required
 def api_sprints():
+    project = request.args.get("project")
     try:
-        sprints = ado.get_iterations()
+        sprints = ado.get_iterations(project=project)
+        result = []
+        for s in sprints:
+            info = {"name": s["name"], "path": s["path"]}
+            if "attributes" in s:
+                info["start_date"] = s["attributes"].get("startDate")
+                info["end_date"] = s["attributes"].get("finishDate")
+                info["time_frame"] = s["attributes"].get("timeFrame")
+            result.append(info)
+        return jsonify({"sprints": result})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/project-sprints")
+@login_required
+def api_project_sprints():
+    """Get sprints for a specific TFS project."""
+    project = request.args.get("project", "").strip()
+    if not project:
+        return jsonify({"error": "project parameter required"}), 400
+    try:
+        sprints = ado.get_iterations(project=project)
         result = []
         for s in sprints:
             info = {"name": s["name"], "path": s["path"]}
@@ -479,11 +502,31 @@ def api_recent_activity():
 @app.route("/api/sprint-data")
 @login_required
 def api_sprint_data():
-    sprint = _sprint_or_current()
-    if not sprint:
-        return jsonify({"error": "No sprint found"}), 400
+    # Support multi-project+sprint via JSON query params
+    # Format: projects=[{"project":"X","sprint":"X\\Sprint 1"},...]
+    import json as _json
+    projects_param = request.args.get("projects")
+    project_sprint_pairs = None
+    if projects_param:
+        try:
+            project_sprint_pairs = _json.loads(projects_param)
+            if not isinstance(project_sprint_pairs, list) or not project_sprint_pairs:
+                project_sprint_pairs = None
+        except (ValueError, TypeError):
+            project_sprint_pairs = None
+
+    if project_sprint_pairs:
+        sprint = ""  # not needed when multi-project is active
+    else:
+        sprint = _sprint_or_current()
+        if not sprint:
+            return jsonify({"error": "No sprint found. Please select projects & sprints."}), 400
     try:
-        return jsonify(build_sprint_data(ado, sprint, team_override=_my_team()))
+        return jsonify(build_sprint_data(
+            ado, sprint,
+            team_override=_my_team(),
+            project_sprint_pairs=project_sprint_pairs,
+        ))
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -722,5 +765,5 @@ def reset():
 # ══════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
-    print("Starting Azure DevOps Agent on http://localhost:5000")
+    print("Starting ArthaFin on http://localhost:5000")
     app.run(debug=True, port=5000)

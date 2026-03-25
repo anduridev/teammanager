@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>{{ project }} — Sprint Dashboard</title>
+<title>ArthaFin — Sprint Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -302,18 +302,19 @@ tbody tr:hover{background:#fafbfc}
 
 <div class="header">
     <div class="header-left">
-        <div class="logo">AD</div>
-        <h1>{{ project }}</h1>
-        <span class="project-badge" id="sprintBadge">Loading...</span>
+        <div class="logo">AF</div>
+        <h1>ArthaFin</h1>
+        <span class="project-badge" id="sprintBadge">Select Projects</span>
     </div>
     <div style="display:flex;align-items:center;gap:12px">
         <div class="header-tabs">
             <button class="tab-btn active" id="tabDash" onclick="showView('dashboard')">Dashboard</button>
             <button class="tab-btn" id="tabChat" onclick="showView('chat')">AI Agent</button>
         </div>
-        <select id="sprintSelect" onchange="onSprintChange()" style="font-size:12px;font-family:inherit;border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--text);background:var(--white);outline:none;min-width:160px;cursor:pointer">
-            <option value="">Loading sprints...</option>
-        </select>
+        <button class="btn-refresh" id="projSprintBtn" onclick="openProjectSprintPanel()" style="color:var(--accent);border-color:var(--accent);font-weight:600">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            Projects &amp; Sprints
+        </button>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
         <button class="btn-refresh" id="refreshBtn" onclick="refreshAll()">
@@ -338,13 +339,40 @@ tbody tr:hover{background:#fafbfc}
 </div>
 
 <div class="sub-header" id="subHeader">
-    <div class="sh-item"><span>Project</span> <span class="sh-label">{{ project }}</span></div>
-    <div class="sh-divider"></div>
     <div class="sh-item"><span>Week</span> <span class="sh-label" id="shWeek">—</span></div>
     <div class="sh-divider"></div>
-    <div class="sh-item"><span>Sprint</span> <span class="sh-label" id="shSprint">—</span></div>
+    <div id="shProjectBadges" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"></div>
     <div class="sh-divider"></div>
     <div class="sh-item" id="shDates">—</div>
+</div>
+
+<!-- Project+Sprint Selection Modal -->
+<div id="projSprintModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.3);align-items:center;justify-content:center">
+<div style="background:var(--white);border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.15);width:640px;max-width:90vw;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
+    <div style="padding:18px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <div><h3 style="font-size:15px;font-weight:700;margin-bottom:2px">Projects &amp; Sprints</h3><p style="font-size:11px;color:var(--sec)">Select projects and choose a sprint for each</p></div>
+        <button onclick="closeProjSprintModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--muted);line-height:1">&times;</button>
+    </div>
+    <div style="padding:16px 24px;flex:1;overflow-y:auto">
+        <div style="margin-bottom:12px">
+            <input type="text" id="psProjectSearch" oninput="psFilterProjects()" placeholder="Search projects..." style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit;outline:none">
+        </div>
+        <div id="psSelectedCombos" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
+        <div id="psProjectList" style="display:flex;flex-wrap:wrap;gap:6px;max-height:140px;overflow-y:auto;padding:4px 0"></div>
+        <div id="psSprintSection" style="margin-top:16px;display:none">
+            <div style="font-size:12px;font-weight:600;margin-bottom:8px">Select sprint for: <span id="psSprintForProject" style="color:var(--accent)"></span></div>
+            <div id="psSprintLoading" style="font-size:11px;color:var(--muted);display:none">Loading sprints...</div>
+            <div id="psSprintList" style="display:flex;flex-wrap:wrap;gap:6px;max-height:180px;overflow-y:auto"></div>
+        </div>
+    </div>
+    <div style="padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <span id="psStatus" style="font-size:11px;color:var(--sec)"></span>
+        <div style="display:flex;gap:8px">
+            <button onclick="closeProjSprintModal()" style="padding:7px 16px;border:1px solid var(--border);background:var(--white);border-radius:8px;font-size:12px;font-family:inherit;cursor:pointer;color:var(--sec)">Cancel</button>
+            <button onclick="psApplyAndLoad()" style="padding:7px 20px;border:none;background:var(--accent);color:#fff;border-radius:8px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer">Apply &amp; Load</button>
+        </div>
+    </div>
+</div>
 </div>
 
 <div class="main-layout">
@@ -449,40 +477,34 @@ let SD=null; // raw sprint data from /api/sprint-data (single TFS fetch)
 let allSprints=[]; // cached sprints list
 let currentSprint=''; // selected sprint path
 
+// Multi-project+sprint selections: [{project:'X', sprint:'X\\Sprint 1'}]
+let selectedProjectSprints=[];
+// All TFS projects (cached for modal)
+let allTfsProjects=[];
+
 const esc=s=>{const d=document.createElement('div');d.textContent=s;return d.innerHTML};
 const badge=s=>{if(!s)return'';const l=s.toLowerCase();return`<span class="badge ${l.includes('active')||l.includes('progress')?'active':l.includes('closed')||l.includes('done')||l.includes('resolved')?'done':'new'}">${esc(s)}</span>`};
 
-// ── Sprint Selector ──
+// ── Legacy Sprint Selector (fallback) ──
 async function loadSprints(){
     try{
         const r=await fetch('/api/sprints');
         const d=await r.json();
         allSprints=d.sprints||[];
-        const sel=document.getElementById('sprintSelect');
-        sel.innerHTML='';
         let currentFound=false;
         for(const s of allSprints){
-            const opt=document.createElement('option');
-            opt.value=s.path;
-            opt.textContent=s.name+(s.time_frame==='current'?' (Current)':'');
-            if(s.time_frame==='current'){opt.selected=true;currentSprint=s.path;currentFound=true}
-            sel.appendChild(opt);
+            if(s.time_frame==='current'){currentSprint=s.path;currentFound=true;break}
         }
         if(!currentFound&&allSprints.length){
             currentSprint=allSprints[allSprints.length-1].path;
-            sel.value=currentSprint;
         }
     }catch(e){console.error('Failed to load sprints',e)}
 }
 
 function getSelectedSprint(){
-    return document.getElementById('sprintSelect').value||currentSprint;
-}
-
-function onSprintChange(){
-    currentSprint=getSelectedSprint();
-    document.getElementById('sprintBadge').textContent=currentSprint.split('\\').pop()||currentSprint;
-    loadSprintData();
+    // When multi-project is active, return the first sprint
+    if(selectedProjectSprints.length)return selectedProjectSprints[0].sprint;
+    return currentSprint;
 }
 
 function refreshAll(){
@@ -493,15 +515,166 @@ function refreshAll(){
 // ── Load ALL sprint data in one call ──
 async function loadSprintData(){
     const btn=document.getElementById('refreshBtn');btn.classList.add('spinning');
-    const sprint=getSelectedSprint();
     try{
-        const r=await fetch('/api/sprint-data?sprint='+encodeURIComponent(sprint));
+        let url;
+        if(selectedProjectSprints.length){
+            // Multi-project mode
+            url='/api/sprint-data?projects='+encodeURIComponent(JSON.stringify(selectedProjectSprints));
+        }else{
+            // Legacy single sprint mode
+            const sprint=getSelectedSprint();
+            url='/api/sprint-data?sprint='+encodeURIComponent(sprint);
+        }
+        const r=await fetch(url);
         SD=await r.json();
         if(SD.error){document.getElementById('dashboardView').innerHTML=`<div class="detail-card"><h3>Error</h3><p>${esc(SD.error)}</p></div>`;return}
         processSprintData();
         renderDashboard();
     }catch(e){document.getElementById('dashboardView').innerHTML=`<div class="detail-card"><h3>Error</h3><p>${esc(e.message)}</p></div>`}
     finally{btn.classList.remove('spinning')}
+}
+
+// ── Project+Sprint Selection Modal ──
+let _psPickingProject=null; // project currently picking sprint for
+let _psPendingCombos=[]; // temporary combos being built in modal
+
+function openProjectSprintPanel(){
+    _psPendingCombos=[...selectedProjectSprints];
+    document.getElementById('projSprintModal').style.display='flex';
+    psRenderSelectedCombos();
+    if(!allTfsProjects.length)psLoadProjects();
+    else psRenderProjects();
+}
+
+function closeProjSprintModal(){
+    document.getElementById('projSprintModal').style.display='none';
+    _psPickingProject=null;
+}
+
+async function psLoadProjects(){
+    document.getElementById('psProjectList').innerHTML='<span style="font-size:11px;color:var(--muted)">Loading projects...</span>';
+    try{
+        const r=await fetch('/api/tfs-projects');
+        const d=await r.json();
+        allTfsProjects=d.projects||[];
+        psRenderProjects();
+    }catch(e){document.getElementById('psProjectList').innerHTML=`<span style="color:var(--red);font-size:11px">Failed to load projects</span>`}
+}
+
+function psFilterProjects(){
+    psRenderProjects();
+}
+
+let _psFilteredProjects=[];
+function psRenderProjects(){
+    const q=(document.getElementById('psProjectSearch')||{}).value||'';
+    const ql=q.toLowerCase();
+    const el=document.getElementById('psProjectList');
+    const selectedProjs=new Set(_psPendingCombos.map(c=>c.project.toLowerCase()));
+    _psFilteredProjects=[];
+    let h='';
+    for(const p of allTfsProjects){
+        if(ql&&!p.name.toLowerCase().includes(ql))continue;
+        const idx=_psFilteredProjects.length;
+        _psFilteredProjects.push(p);
+        const sel=selectedProjs.has(p.name.toLowerCase());
+        h+=`<button onclick="psSelectProjectIdx(${idx})" style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:500;font-family:inherit;cursor:pointer;border:1px solid ${sel?'var(--accent)':'var(--border)'};background:${sel?'var(--accent-l)':'var(--white)'};color:${sel?'var(--accent)':'var(--sec)'};transition:all .15s">${esc(p.name)}</button>`;
+    }
+    el.innerHTML=h||'<span style="font-size:11px;color:var(--muted)">No projects match</span>';
+}
+function psSelectProjectIdx(i){const p=_psFilteredProjects[i];if(p)psSelectProject(p.name)}
+
+function psRenderSelectedCombos(){
+    const el=document.getElementById('psSelectedCombos');
+    if(!_psPendingCombos.length){el.innerHTML='<span style="font-size:11px;color:var(--muted)">No projects selected yet</span>';return}
+    let h='';
+    for(let i=0;i<_psPendingCombos.length;i++){
+        const c=_psPendingCombos[i];
+        const spName=c.sprint?c.sprint.split('\\').pop():'(no sprint)';
+        h+=`<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:var(--accent-l);color:var(--accent);border-radius:6px;font-size:11px;font-weight:600">
+            ${esc(c.project)} / ${esc(spName)}
+            <button onclick="psRemoveCombo(${i})" style="background:none;border:none;cursor:pointer;color:var(--accent);font-size:14px;line-height:1;margin-left:2px">&times;</button>
+        </span>`;
+    }
+    el.innerHTML=h;
+    document.getElementById('psStatus').textContent=_psPendingCombos.length+' project(s) selected';
+}
+
+function psRemoveCombo(i){
+    _psPendingCombos.splice(i,1);
+    psRenderSelectedCombos();
+    psRenderProjects();
+}
+
+async function psSelectProject(name){
+    // If already selected, remove it
+    const idx=_psPendingCombos.findIndex(c=>c.project.toLowerCase()===name.toLowerCase());
+    if(idx>=0){
+        _psPendingCombos.splice(idx,1);
+        psRenderSelectedCombos();
+        psRenderProjects();
+        document.getElementById('psSprintSection').style.display='none';
+        return;
+    }
+    // Show sprint picker for this project
+    _psPickingProject=name;
+    document.getElementById('psSprintForProject').textContent=name;
+    document.getElementById('psSprintSection').style.display='block';
+    document.getElementById('psSprintLoading').style.display='block';
+    document.getElementById('psSprintList').innerHTML='';
+    try{
+        const r=await fetch('/api/project-sprints?project='+encodeURIComponent(name));
+        const d=await r.json();
+        const sprints=d.sprints||[];
+        document.getElementById('psSprintLoading').style.display='none';
+        _psSprintResults=sprints;
+        let h='';
+        for(let i=0;i<sprints.length;i++){
+            const s=sprints[i];
+            const isCurrent=s.time_frame==='current';
+            h+=`<button onclick="psPickSprintIdx(${i})" style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:${isCurrent?'700':'500'};font-family:inherit;cursor:pointer;border:1px solid ${isCurrent?'var(--accent)':'var(--border)'};background:${isCurrent?'var(--accent-l)':'var(--white)'};color:${isCurrent?'var(--accent)':'var(--sec)'};transition:all .15s">${esc(s.name)}${isCurrent?' (Current)':''}</button>`;
+        }
+        document.getElementById('psSprintList').innerHTML=h||'<span style="font-size:11px;color:var(--muted)">No sprints found</span>';
+    }catch(e){
+        document.getElementById('psSprintLoading').style.display='none';
+        document.getElementById('psSprintList').innerHTML=`<span style="color:var(--red);font-size:11px">Failed to load sprints</span>`;
+    }
+}
+
+let _psSprintResults=[];
+
+function psPickSprintIdx(i){
+    const s=_psSprintResults[i];if(!s)return;
+    _psPendingCombos.push({project:_psPickingProject, sprint:s.path});
+    _psPickingProject=null;
+    document.getElementById('psSprintSection').style.display='none';
+    psRenderSelectedCombos();
+    psRenderProjects();
+}
+
+async function psApplyAndLoad(){
+    selectedProjectSprints=[..._psPendingCombos];
+    closeProjSprintModal();
+    // Save to server
+    try{
+        await fetch('/api/my-projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({projects:selectedProjectSprints})});
+    }catch(e){console.error('Failed to save project selections',e)}
+    // Update sub-header badges
+    updateSubHeader();
+    // Load data
+    loadSprintData();
+}
+
+async function loadSavedProjectSprints(){
+    try{
+        const r=await fetch('/api/my-projects');
+        const d=await r.json();
+        const saved=d.projects||[];
+        // Check if new format (array of objects with project+sprint)
+        if(saved.length&&typeof saved[0]==='object'&&saved[0].project){
+            selectedProjectSprints=saved;
+        }
+    }catch(e){}
 }
 
 // Build team lookup from SD.team
@@ -522,7 +695,6 @@ function processSprintData(){
     const items=SD.items||[];
     const di=SD.day_info||{};
     const sp=SD.sprint||{};
-    document.getElementById('sprintBadge').textContent=sp.name||sp.path||'';
 
     // Separate by type
     const tasks=items.filter(i=>i.type==='Task');
@@ -597,23 +769,43 @@ function processSprintData(){
 }
 
 function updateSubHeader(){
-    if(!SD)return;
-    const sp=SD.sprint||{};
     // Week number (ISO week)
     const now=new Date();
     const jan1=new Date(now.getFullYear(),0,1);
     const weekNum=Math.ceil(((now-jan1)/86400000+jan1.getDay()+1)/7);
     document.getElementById('shWeek').textContent=weekNum;
 
-    // Sprint name
-    document.getElementById('shSprint').textContent=sp.name||sp.path||'—';
-
-    // Sprint dates
-    const sd=sp.start_date,ed=sp.end_date;
-    if(sd&&ed){
-        document.getElementById('shDates').innerHTML=`<span>${formatDate(sd.substring(0,10))}</span> <span>→</span> <span>${formatDate(ed.substring(0,10))}</span>`;
+    // Project+Sprint badges — always use selectedProjectSprints (client state)
+    const badgesEl=document.getElementById('shProjectBadges');
+    const selSprints=selectedProjectSprints.length?selectedProjectSprints:(SD&&SD.selected_sprints?SD.selected_sprints:[]);
+    if(selSprints&&selSprints.length){
+        let bh='';
+        for(const ps of selSprints){
+            const proj=ps.project||'';
+            const spName=(ps.sprint_name||ps.sprint||'').split('\\').pop();
+            bh+=`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;background:var(--accent-l);color:var(--accent);border-radius:5px;font-size:10px;font-weight:600">${esc(proj)} / ${esc(spName)}</span>`;
+        }
+        badgesEl.innerHTML=bh;
+        // Update header badge
+        if(selSprints.length===1){
+            document.getElementById('sprintBadge').textContent=(selSprints[0].sprint_name||selSprints[0].sprint||'').split('\\').pop();
+        }else{
+            document.getElementById('sprintBadge').textContent=selSprints.length+' projects';
+        }
     }else{
-        document.getElementById('shDates').textContent='—';
+        badgesEl.innerHTML='<span style="font-size:11px;color:var(--orange);font-weight:500">No projects selected</span>';
+        document.getElementById('sprintBadge').textContent='No projects';
+    }
+
+    // Sprint dates (from primary sprint)
+    if(SD){
+        const sp=SD.sprint||{};
+        const sd=sp.start_date,ed=sp.end_date;
+        if(sd&&ed){
+            document.getElementById('shDates').innerHTML=`<span>${formatDate(sd.substring(0,10))}</span> <span>→</span> <span>${formatDate(ed.substring(0,10))}</span>`;
+        }else{
+            document.getElementById('shDates').textContent='—';
+        }
     }
 }
 
@@ -654,8 +846,8 @@ function isProg(s){const l=(s||'').toLowerCase();return l==='active'||l==='in pr
 function formatDate(d){if(!d)return'—';try{const dt=new Date(d);const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return`${days[dt.getDay()]}, ${dt.getDate()} ${months[dt.getMonth()]}`}catch(e){return d}}
 
 function renderDashboard(){
+    updateSubHeader();
     const s=D.summary,sp=D.sprint;
-    document.getElementById('sprintBadge').textContent=sp.name||sp.path;
 
     let done=0,prog=0;
     for(const[state,cnt] of Object.entries(s.task_states||{})){
@@ -812,10 +1004,10 @@ function renderDashboard(){
         if(hasTasks){
             const childTasks=m.tasks||[];
             h+=`<tr class="expand-row dash-member-row" data-member="${esc(m.member).toLowerCase()}" id="erow${i}"><td colspan="9"><table class="sub-table">`;
-            h+=`<tr style="background:#f0f1f3;font-weight:600;font-size:10px;color:var(--sec)"><td style="width:50px">ID</td><td>Task</td><td style="width:90px">State</td><td style="width:70px">Planned</td><td style="width:70px">Remaining</td><td style="width:70px">Completed</td></tr>`;
+            h+=`<tr style="background:#f0f1f3;font-weight:600;font-size:10px;color:var(--sec)"><td style="width:50px">ID</td><td>Task</td><td style="width:90px">State</td><td style="width:90px">Project</td><td style="width:70px">Planned</td><td style="width:70px">Remaining</td><td style="width:70px">Completed</td></tr>`;
             for(const t of childTasks){
                 const planned=t.original_estimate||0;const rem=t.remaining_work||0;const comp=t.completed_work||0;
-                h+=`<tr><td style="width:50px">#${t.id}</td><td>${esc(t.title)}</td><td style="width:90px">${badge(t.state)}</td><td style="width:70px">${planned}h</td><td style="width:70px">${rem}h</td><td style="width:70px;color:${comp>0?'var(--green)':'var(--muted)'}">${comp}h</td></tr>`;
+                h+=`<tr><td style="width:50px">#${t.id}</td><td>${esc(t.title)}</td><td style="width:90px">${badge(t.state)}</td><td style="width:90px;font-size:10px;color:var(--muted)">${esc(t.project||'')}</td><td style="width:70px">${planned}h</td><td style="width:70px">${rem}h</td><td style="width:70px;color:${comp>0?'var(--green)':'var(--muted)'}">${comp}h</td></tr>`;
             }
             h+=`</table></td></tr>`;
         }
@@ -897,7 +1089,7 @@ function renderDashboard(){
     }
     if(stuckMembers.length){
         h+=`<div class="section"><div class="section-head"><h3>Team Stuck On</h3><span class="count" style="color:var(--red)">${stuckMembers.length} members</span></div>`;
-        h+=`<div class="tbl-wrap"><table><thead><tr><th>Member</th><th>Task</th><th>State</th><th>No Update</th><th>Remaining</th></tr></thead><tbody>`;
+        h+=`<div class="tbl-wrap"><table><thead><tr><th>Member</th><th>Task</th><th>State</th><th>Project</th><th>No Update</th><th>Remaining</th></tr></thead><tbody>`;
         for(const sm of stuckMembers){
             for(let i=0;i<sm.tasks.length;i++){
                 const t=sm.tasks[i];
@@ -907,6 +1099,7 @@ function renderDashboard(){
                 if(i===0)h+=`<td rowspan="${sm.tasks.length}" style="font-weight:500;vertical-align:top;border-right:1px solid var(--border-l)">${esc(sm.member)}</td>`;
                 h+=`<td>#${t.id} ${esc(t.title)}</td>`;
                 h+=`<td>${badge(t.state)}</td>`;
+                h+=`<td style="font-size:10px;color:var(--muted)">${esc(t.project||'')}</td>`;
                 h+=`<td style="font-weight:600;color:${color}">${days}d</td>`;
                 h+=`<td>${t.remaining_work||0}h</td>`;
                 h+=`</tr>`;
@@ -963,8 +1156,8 @@ function renderDashboard(){
     // ── Unassigned ──
     if(D.unassigned.length){
         h+=`<div class="section"><div class="section-head"><h3>Unassigned Items</h3><span class="count" style="color:var(--red)">${D.unassigned.length} items</span></div>
-        <div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Task</th><th>State</th><th>Remaining Work</th></tr></thead><tbody>`;
-        for(const t of D.unassigned)h+=`<tr><td>#${t.id}</td><td>${esc(t.title)}</td><td>${badge(t.state)}</td><td>${t.remaining_work||0}h</td></tr>`;
+        <div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Task</th><th>State</th><th>Project</th><th>Remaining Work</th></tr></thead><tbody>`;
+        for(const t of D.unassigned)h+=`<tr><td>#${t.id}</td><td>${esc(t.title)}</td><td>${badge(t.state)}</td><td style="font-size:10px;color:var(--muted)">${esc(t.project||'')}</td><td>${t.remaining_work||0}h</td></tr>`;
         h+=`</tbody></table></div></div>`;
     }
 
@@ -1006,8 +1199,8 @@ function showDetail(type){
     h+=`<div class="subtitle">${items.length} items</div>`;
     if(!items.length){h+=`<p style="color:var(--muted);padding:12px 0">No items match filter.</p>`}
     else{
-        h+=`<div class="tbl-wrap" style="border:none;box-shadow:none"><table><thead><tr><th>ID</th><th>Task</th><th>State</th><th>Assigned To</th><th>Remaining</th></tr></thead><tbody>`;
-        for(const t of items)h+=`<tr><td>#${t.id}</td><td>${esc(t.title)}</td><td>${badge(t.state)}</td><td>${esc(t.assigned_to||'—')}</td><td>${t.remaining_work||t.remaining_hours||0}h</td></tr>`;
+        h+=`<div class="tbl-wrap" style="border:none;box-shadow:none"><table><thead><tr><th>ID</th><th>Task</th><th>State</th><th>Project</th><th>Assigned To</th><th>Remaining</th></tr></thead><tbody>`;
+        for(const t of items)h+=`<tr><td>#${t.id}</td><td>${esc(t.title)}</td><td>${badge(t.state)}</td><td style="font-size:10px;color:var(--muted)">${esc(t.project||'')}</td><td>${esc(t.assigned_to||'—')}</td><td>${t.remaining_work||t.remaining_hours||0}h</td></tr>`;
         h+=`</tbody></table></div>`;
     }
     h+=`</div>`;dv.innerHTML=h;restoreFilters('detail',f.member,f.state,f.search);
@@ -1029,7 +1222,7 @@ function showMember(name, crossProject){
     if(crossProject){
         // Fetch cross-project tasks via API
         dv.innerHTML='<button class="back-btn" onclick="showView(\'dashboard\')">← Back to Dashboard</button><div class="detail-card"><div class="shimmer w80"></div><div class="shimmer w60"></div><div class="shimmer w80"></div></div>';
-        const sp=document.getElementById('sprintSelect').value||'';
+        const sp=getSelectedSprint()||'';
         fetch(`/api/member-tasks?member=${encodeURIComponent(name)}&sprint=${encodeURIComponent(sp)}&cross_project=true`)
         .then(r=>r.json()).then(d=>{
             if(d.error){dv.innerHTML=`<button class="back-btn" onclick="showView('dashboard')">← Back</button><div class="detail-card"><h3>Error</h3><p>${esc(d.error)}</p></div>`;return}
@@ -1041,7 +1234,7 @@ function showMember(name, crossProject){
     try{
         const m=D.members.find(m=>m.member===name);
         const totalCompleted=m?m.completed_hours:0;
-        const d={member:name,sprint:D.sprint.name||'',task_count:m?m.task_count:0,total_allocated_hours:m?m.total_allocated_hours:0,total_remaining_hours:m?m.remaining_hours:0,total_completed:totalCompleted,tasks:m?m.tasks.map(t=>({id:t.id,title:t.title,state:t.state,priority:t.priority,planned:t.original_estimate||0,remaining_hours:t.remaining_work,completed:t.completed_work||0,project:'',iteration:''})):[]};
+        const d={member:name,sprint:D.sprint.name||'',task_count:m?m.task_count:0,total_allocated_hours:m?m.total_allocated_hours:0,total_remaining_hours:m?m.remaining_hours:0,total_completed:totalCompleted,tasks:m?m.tasks.map(t=>({id:t.id,title:t.title,state:t.state,priority:t.priority,planned:t.original_estimate||0,remaining_hours:t.remaining_work,completed:t.completed_work||0,project:t.project||'',iteration:''})):[]};
         renderMemberDetail(dv, d, name, false);
     }catch(e){dv.innerHTML=`<button class="back-btn" onclick="showView('dashboard')">← Back</button><div class="detail-card"><h3>Error</h3><p>${esc(e.message)}</p></div>`}
 }
@@ -1066,14 +1259,26 @@ function renderMemberDetail(dv, d, name, isCross){
     const tasks=d.tasks||[];
     if(!tasks.length){h+=`<p style="color:var(--muted)">No tasks assigned.</p>`}
     else{
-        const showProject=isCross;
-        h+=`<div class="tbl-wrap" style="border:none;box-shadow:none"><table><thead><tr><th>ID</th><th>Task</th><th>State</th>${showProject?'<th>Project</th>':''}<th>Planned</th><th>Remaining</th><th>Completed</th></tr></thead><tbody>`;
+        // Project breakdown summary
+        const projMap={};
+        for(const t of tasks){const pn=t.project||t.iteration||'Unknown';if(!projMap[pn])projMap[pn]={count:0,hours:0};projMap[pn].count++;projMap[pn].hours+=t.planned||t.allocated_hours||t.remaining_hours||0}
+        const projKeys=Object.keys(projMap);
+        if(projKeys.length>0){
+            h+=`<div style="margin-bottom:12px;font-size:12px;color:var(--sec);display:flex;flex-wrap:wrap;align-items:center;gap:4px">`;
+            for(let pi=0;pi<projKeys.length;pi++){
+                const pk=projKeys[pi],pv=projMap[pk];
+                if(pi>0)h+=`<span style="color:var(--border);margin:0 4px">|</span>`;
+                h+=`<span><strong>${esc(pk)}</strong>: ${pv.count} task${pv.count!==1?'s':''} (${pv.hours}h)</span>`;
+            }
+            h+=`</div>`;
+        }
+        h+=`<div class="tbl-wrap" style="border:none;box-shadow:none"><table><thead><tr><th>ID</th><th>Task</th><th>State</th><th>Project</th><th>Planned</th><th>Remaining</th><th>Completed</th></tr></thead><tbody>`;
         for(const t of tasks){
             const pl=t.planned||t.allocated_hours||0;
             const rem=t.remaining_hours||0;
             const comp=t.completed||t.completed_hours||0;
             const proj=t.project||t.iteration||'';
-            h+=`<tr><td>#${t.id}</td><td>${esc(t.title)}</td><td>${badge(t.state)}</td>${showProject?`<td style="font-size:10px;color:var(--muted)">${esc(proj)}</td>`:''}  <td>${pl}h</td><td>${rem}h</td><td style="color:${comp>0?'var(--green)':'var(--muted)'}"><b>${comp}h</b></td></tr>`;
+            h+=`<tr><td>#${t.id}</td><td>${esc(t.title)}</td><td>${badge(t.state)}</td><td style="font-size:10px;color:var(--muted)">${esc(proj)}</td><td>${pl}h</td><td>${rem}h</td><td style="color:${comp>0?'var(--green)':'var(--muted)'}"><b>${comp}h</b></td></tr>`;
         }
         h+=`</tbody></table></div>`;
     }
@@ -1271,9 +1476,9 @@ function loadPage(page){
             }
             if(!yesterday.length&&!working.length&&!blocked.length)continue;
             h+=`<div class="standup-member"><h4>${esc(m.member)}</h4>`;
-            if(yesterday.length){h+=`<div class="standup-section"><span class="standup-section-title done">Done Yesterday</span>`;for(const t of yesterday)h+=`<div class="standup-task">#${t.id} ${esc(t.title)}</div>`;h+=`</div>`}
-            if(working.length){h+=`<div class="standup-section"><span class="standup-section-title today">Working Today</span>`;for(const t of working)h+=`<div class="standup-task">#${t.id} ${esc(t.title)} <span style="color:var(--muted)">${t.remaining_work}h left</span></div>`;h+=`</div>`}
-            if(blocked.length){h+=`<div class="standup-section"><span class="standup-section-title blocked">Blocked / Stale (2+ days)</span>`;for(const t of blocked)h+=`<div class="standup-task" style="border-color:var(--red)">#${t.id} ${esc(t.title)}</div>`;h+=`</div>`}
+            if(yesterday.length){h+=`<div class="standup-section"><span class="standup-section-title done">Done Yesterday</span>`;for(const t of yesterday)h+=`<div class="standup-task">#${t.id} ${esc(t.title)}${t.project?` <span style="font-size:10px;color:var(--muted)">[${esc(t.project)}]</span>`:''}</div>`;h+=`</div>`}
+            if(working.length){h+=`<div class="standup-section"><span class="standup-section-title today">Working Today</span>`;for(const t of working)h+=`<div class="standup-task">#${t.id} ${esc(t.title)}${t.project?` <span style="font-size:10px;color:var(--muted)">[${esc(t.project)}]</span>`:''} <span style="color:var(--muted)">${t.remaining_work}h left</span></div>`;h+=`</div>`}
+            if(blocked.length){h+=`<div class="standup-section"><span class="standup-section-title blocked">Blocked / Stale (2+ days)</span>`;for(const t of blocked)h+=`<div class="standup-task" style="border-color:var(--red)">#${t.id} ${esc(t.title)}${t.project?` <span style="font-size:10px;color:var(--muted)">[${esc(t.project)}]</span>`:''}</div>`;h+=`</div>`}
             h+=`</div>`;
         }
         h+=`</div>`;dv.innerHTML=h;restoreFilters(page,f.member,'',f.search);
@@ -1300,8 +1505,8 @@ function loadPage(page){
         h+=`<div class="subtitle">${staleItems.length} items not updated in 2+ days</div>`;
         if(!staleItems.length)h+=`<p style="color:var(--green);padding:12px 0">No stale items found</p>`;
         else{
-            h+=`<div class="tbl-wrap" style="border:none;box-shadow:none"><table><thead><tr><th>ID</th><th>Task</th><th>State</th><th>Assigned To</th><th>Days Stale</th><th>Remaining</th></tr></thead><tbody>`;
-            for(const t of staleItems){const color=t.days_stale>=5?'var(--red)':t.days_stale>=3?'var(--orange)':'';h+=`<tr><td>#${t.id}</td><td>${esc(t.title)}</td><td>${badge(t.state)}</td><td>${esc(t.assigned_to||'—')}</td><td style="font-weight:600;${color?'color:'+color:''}">${t.days_stale}d</td><td>${t.remaining_work}h</td></tr>`}
+            h+=`<div class="tbl-wrap" style="border:none;box-shadow:none"><table><thead><tr><th>ID</th><th>Task</th><th>State</th><th>Project</th><th>Assigned To</th><th>Days Stale</th><th>Remaining</th></tr></thead><tbody>`;
+            for(const t of staleItems){const color=t.days_stale>=5?'var(--red)':t.days_stale>=3?'var(--orange)':'';h+=`<tr><td>#${t.id}</td><td>${esc(t.title)}</td><td>${badge(t.state)}</td><td style="font-size:10px;color:var(--muted)">${esc(t.project||'')}</td><td>${esc(t.assigned_to||'—')}</td><td style="font-weight:600;${color?'color:'+color:''}">${t.days_stale}d</td><td>${t.remaining_work}h</td></tr>`}
             h+=`</tbody></table></div>`;
         }
         h+=`</div>`;dv.innerHTML=h;restoreFilters(page,f.member,f.state,f.search);
@@ -1330,7 +1535,7 @@ function loadPage(page){
             h+=`<td><strong>#${p.id}</strong> ${esc(p.title)}</td>`;
             h+=`<td><div class="member-progress"><div class="mp-bar"><div class="mp-fill ${cls}" style="width:${pct}%"></div></div><span class="mp-pct ${cls}">${pct}%</span></div></td>`;
             h+=`<td><span class="cnt dn">${dn}</span></td><td><span class="cnt prog">${ip}</span></td><td><span class="cnt nw">${td}</span></td><td>${rem}h</td></tr>`;
-            if(hasTasks){h+=`<tr class="expand-row" id="prow${i}"><td colspan="7"><table class="sub-table">`;for(const t of children)h+=`<tr><td style="width:50px">#${t.id}</td><td>${esc(t.title)}</td><td style="width:90px">${badge(t.state)}</td><td style="width:70px">${t.remaining_work}h</td></tr>`;h+=`</table></td></tr>`}
+            if(hasTasks){h+=`<tr class="expand-row" id="prow${i}"><td colspan="7"><table class="sub-table">`;for(const t of children)h+=`<tr><td style="width:50px">#${t.id}</td><td>${esc(t.title)}</td><td style="width:90px">${badge(t.state)}</td><td style="width:90px;font-size:10px;color:var(--muted)">${esc(t.project||'')}</td><td style="width:70px">${t.remaining_work}h</td></tr>`;h+=`</table></td></tr>`}
         }
         if(!shown)h+=`<tr><td colspan="8" style="color:var(--muted);padding:16px">No PBIs match filter</td></tr>`;
         h+=`</tbody></table></div></div>`;dv.innerHTML=h;restoreFilters(page,f.member,'',f.search);
@@ -1346,8 +1551,8 @@ function loadPage(page){
         const active=bugs.filter(b=>!isDone(b.state)).length,resolved=bugs.filter(b=>isDone(b.state)).length;
         h+=`<div class="stats" style="margin-bottom:16px"><div class="stat rd"><div class="stat-val">${active}</div><div class="stat-lbl">Active Bugs</div></div><div class="stat gr"><div class="stat-val">${resolved}</div><div class="stat-lbl">Resolved</div></div><div class="stat"><div class="stat-val">${bugs.length}</div><div class="stat-lbl">Total</div></div></div>`;
         if(bugs.length){
-            h+=`<div class="tbl-wrap" style="border:none;box-shadow:none"><table><thead><tr><th>ID</th><th>Title</th><th>State</th><th>Assigned To</th><th>Priority</th><th>Age</th></tr></thead><tbody>`;
-            for(const b of bugs){const age=b.created_date?Math.floor((today-new Date(b.created_date))/(1000*60*60*24)):0;const ageColor=age>=7?'var(--red)':age>=3?'var(--orange)':'';h+=`<tr><td>#${b.id}</td><td>${esc(b.title)}</td><td>${badge(b.state)}</td><td>${esc(b.assigned_to||'—')}</td><td>${b.priority||'—'}</td><td style="font-weight:600;${ageColor?'color:'+ageColor:''}">${age}d</td></tr>`}
+            h+=`<div class="tbl-wrap" style="border:none;box-shadow:none"><table><thead><tr><th>ID</th><th>Title</th><th>State</th><th>Project</th><th>Assigned To</th><th>Priority</th><th>Age</th></tr></thead><tbody>`;
+            for(const b of bugs){const age=b.created_date?Math.floor((today-new Date(b.created_date))/(1000*60*60*24)):0;const ageColor=age>=7?'var(--red)':age>=3?'var(--orange)':'';h+=`<tr><td>#${b.id}</td><td>${esc(b.title)}</td><td>${badge(b.state)}</td><td style="font-size:10px;color:var(--muted)">${esc(b.project||'')}</td><td>${esc(b.assigned_to||'—')}</td><td>${b.priority||'—'}</td><td style="font-weight:600;${ageColor?'color:'+ageColor:''}">${age}d</td></tr>`}
             h+=`</tbody></table></div>`;
         }else h+=`<p style="color:var(--muted);padding:12px 0">No bugs match filter</p>`;
         h+=`</div>`;dv.innerHTML=h;restoreFilters(page,f.member,f.state,f.search);
@@ -1566,9 +1771,14 @@ async function renderTeamManagePage(){
     try{const r=await fetch('/api/selected-users');const d=await r.json();
     for(const m of d.members||[]){if(typeof m==='string')tmSelected.set(m.toLowerCase(),{displayName:m,uniqueName:'',id:''});else tmSelected.set(tmKey(m),m)}}catch(e){}
     tmRenderTeamTable();
-    // Load saved projects
+    // Load saved projects (new format: [{project,sprint}] or legacy strings)
     try{const r=await fetch('/api/my-projects');const d=await r.json();
-    tmSelectedProjects=new Set((d.projects||[]).map(p=>p.toLowerCase()));
+    const saved=d.projects||[];
+    tmSelectedProjects=new Set();
+    for(const p of saved){
+        if(typeof p==='string')tmSelectedProjects.add(p.toLowerCase());
+        else if(p.project)tmSelectedProjects.add(p.project.toLowerCase());
+    }
     const info=document.getElementById('projInfo');
     info.textContent=tmSelectedProjects.size?tmSelectedProjects.size+' project(s) selected':'All projects (default)'}catch(e){}
 }
@@ -1829,9 +2039,24 @@ async function adminRemove(uniqueName, name){
 
 // ── Init ──
 (async()=>{
+    await loadSavedProjectSprints();
+    if(selectedProjectSprints.length){
+        updateSubHeader();
+        loadSprintData();
+        loadActivity();
+    }else{
+        // No projects selected — show prompt
+        document.getElementById('sprintBadge').textContent='No projects';
+        document.getElementById('shProjectBadges').innerHTML='<span style="font-size:11px;color:var(--orange);font-weight:500">Click "Projects & Sprints" to select projects</span>';
+        document.getElementById('dashboardView').innerHTML=`<div class="detail-card" style="text-align:center;padding:60px 30px">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" style="margin-bottom:16px"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            <h3 style="margin-bottom:8px">Welcome to ArthaFin</h3>
+            <p style="color:var(--sec);font-size:13px;margin-bottom:20px">Select your projects and sprints to get started</p>
+            <button onclick="openProjectSprintPanel()" style="padding:10px 24px;border:none;background:var(--accent);color:#fff;border-radius:8px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer">Select Projects & Sprints</button>
+        </div>`;
+    }
+    // Always load default sprints for fallback (compare view, etc.)
     await loadSprints();
-    loadSprintData();
-    loadActivity();
     loadChatList();
 })();
 </script>

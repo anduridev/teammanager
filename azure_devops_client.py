@@ -157,16 +157,18 @@ class AzureDevOpsClient:
         resp.raise_for_status()
         return resp.json()
 
-    def get_iterations(self) -> list:
-        """List all iterations/sprints for the project."""
-        cached = self._cache.get("iterations")
+    def get_iterations(self, project: str = None) -> list:
+        """List all iterations/sprints for a project (defaults to self.project)."""
+        proj = project or self.project
+        cache_key = f"iterations_{proj}"
+        cached = self._cache.get(cache_key)
         if cached is not None:
             return cached
-        url = f"{self.org_url}/{self.project}/_apis/work/teamsettings/iterations"
+        url = f"{self.org_url}/{proj}/_apis/work/teamsettings/iterations"
         resp = requests.get(url, headers=self._json_headers, params=self._api_params())
         resp.raise_for_status()
         result = resp.json().get("value", [])
-        self._cache.set("iterations", result)
+        self._cache.set(cache_key, result)
         return result
 
     def get_recent_activity(self, hours: int = 24, top: int = 100) -> list:
@@ -211,27 +213,29 @@ class AzureDevOpsClient:
         resp.raise_for_status()
         return resp.json().get("value", [])
 
-    def get_capacities(self, iteration_id: str) -> dict:
+    def get_capacities(self, iteration_id: str, project: str = None) -> dict:
         """Get team capacity for a sprint iteration, including per-member capacity,
         days off, and team days off. Returns raw TFS response."""
-        key = f"cap_{iteration_id}"
+        proj = project or self.project
+        key = f"cap_{proj}_{iteration_id}"
         cached = self._cache.get(key)
         if cached is not None:
             return cached
-        url = f"{self.org_url}/{self.project}/_apis/work/teamsettings/iterations/{iteration_id}/capacities"
+        url = f"{self.org_url}/{proj}/_apis/work/teamsettings/iterations/{iteration_id}/capacities"
         resp = requests.get(url, headers=self._json_headers, params=self._api_params())
         resp.raise_for_status()
         result = resp.json()
         self._cache.set(key, result)
         return result
 
-    def get_teamdaysoff(self, iteration_id: str) -> dict:
+    def get_teamdaysoff(self, iteration_id: str, project: str = None) -> dict:
         """Get team days off for a sprint iteration."""
-        key = f"tdo_{iteration_id}"
+        proj = project or self.project
+        key = f"tdo_{proj}_{iteration_id}"
         cached = self._cache.get(key)
         if cached is not None:
             return cached
-        url = f"{self.org_url}/{self.project}/_apis/work/teamsettings/iterations/{iteration_id}/teamdaysoff"
+        url = f"{self.org_url}/{proj}/_apis/work/teamsettings/iterations/{iteration_id}/teamdaysoff"
         resp = requests.get(url, headers=self._json_headers, params=self._api_params())
         resp.raise_for_status()
         result = resp.json()
@@ -368,16 +372,17 @@ class AzureDevOpsClient:
         self._cache.set(key, all_details)
         return all_details
 
-    def query_work_items(self, wiql: str) -> list:
+    def query_work_items(self, wiql: str, project: str = None) -> list:
         """Run a WIQL query and return matching work items.
         Handles pagination — TFS batch API accepts max 200 IDs per call.
         Results are cached for 60s."""
-        key = f"wiql_{hash(wiql)}"
+        proj = project or self.project
+        key = f"wiql_{proj}_{hash(wiql)}"
         cached = self._cache.get(key)
         if cached is not None:
             return cached
 
-        url = f"{self.org_url}/{self.project}/_apis/wit/wiql"
+        url = f"{self.org_url}/{proj}/_apis/wit/wiql"
         resp = requests.post(
             url,
             headers=self._json_headers,

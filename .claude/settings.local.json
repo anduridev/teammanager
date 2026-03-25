@@ -11,7 +11,10 @@
       "Bash(python -c \"import py_compile; py_compile.compile\\(''app.py'', doraise=True\\); print\\(''OK''\\)\")",
       "Bash(python -c \"from app import app; print\\(''OK, routes:'', len\\(app.url_map._rules\\)\\)\")",
       "Bash(python -c \"from app import app; print\\(''OK''\\)\")",
-      "WebSearch"
+      "WebSearch",
+      "Bash(python -c \"from analytics import build_sprint_data, _fetch_one_sprint; print\\(''analytics OK''\\)\")",
+      "Bash(python -c \"from azure_devops_client import AzureDevOpsClient; print\\(''client OK''\\)\")",
+      "Bash(python -c \"from app import app; from analytics import build_sprint_data; from azure_devops_client import AzureDevOpsClient; from auth import get_manager_projects, save_manager_projects; print\\(''ALL OK''\\)\")"
     ]
   }
 }

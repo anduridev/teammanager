@@ -282,11 +282,9 @@ def build_unassigned(ado, sprint: str) -> dict:
     return {"sprint": sprint, "count": len(items), "items": items}
 
 
-def build_sprint_data(ado, sprint: str, team_override: list[dict] | None = None) -> dict:
-    """Single endpoint — fetches ALL work items for a sprint.
-    Returns raw items. Frontend processes everything client-side."""
-
-    sprints = ado.get_iterations()
+def _fetch_one_sprint(ado, project: str, sprint: str, lookup: dict):
+    """Fetch work items, capacity, and day info for a single project+sprint combo."""
+    sprints = ado.get_iterations(project=project)
     sprint_info = None
     iteration_id = None
     for s in sprints:
@@ -303,32 +301,36 @@ def build_sprint_data(ado, sprint: str, team_override: list[dict] | None = None)
         sprint_info = {"name": sprint_name, "path": sprint}
 
     # ALL work items in one WIQL query
+    # Escape single quotes in sprint path for WIQL
+    safe_sprint = sprint.replace("'", "''")
     wiql = (
         f"SELECT [System.Id] FROM WorkItems "
-        f"WHERE [System.IterationPath] = '{sprint}' "
+        f"WHERE [System.IterationPath] = '{safe_sprint}' "
         f"AND [System.WorkItemType] IN ('Task', 'Product Backlog Item', 'Bug') "
         f"ORDER BY [System.WorkItemType], [System.AssignedTo]"
     )
-    all_items = ado.query_work_items(wiql)
+    try:
+        all_items = ado.query_work_items(wiql, project=project)
+    except Exception:
+        all_items = []
 
     # Capacity
     capacity_data = []
-    team_days_off = []
+    team_days_off_raw = []
     if iteration_id:
         try:
-            cap_resp = ado.get_capacities(iteration_id)
+            cap_resp = ado.get_capacities(iteration_id, project=project)
             capacity_data = cap_resp.get("value", [])
         except Exception:
             pass
         try:
-            tdo_resp = ado.get_teamdaysoff(iteration_id)
-            team_days_off = tdo_resp.get("daysOff", [])
+            tdo_resp = ado.get_teamdaysoff(iteration_id, project=project)
+            team_days_off_raw = tdo_resp.get("daysOff", [])
         except Exception:
             pass
 
     # Flatten work items
     items = []
-    lookup = get_team_lookup()
     for wi in all_items:
         f = wi["fields"]
         a_name, a_unique, a_id = get_assignee_info(f)
@@ -372,6 +374,7 @@ def build_sprint_data(ado, sprint: str, team_override: list[dict] | None = None)
             "created_date": f.get("System.CreatedDate", ""),
             "changed_by": changed_by or "",
             "parent_id": get_parent_id(wi),
+            "project": f.get("System.TeamProject", ""),
         })
 
     # Capacity per member
@@ -404,7 +407,7 @@ def build_sprint_data(ado, sprint: str, team_override: list[dict] | None = None)
     # Team days off
     team_off = 0
     team_off_dates = []
-    for doff in team_days_off:
+    for doff in team_days_off_raw:
         ds_str, de_str = doff.get("start", ""), doff.get("end", "")
         if ds_str and de_str:
             try:
@@ -416,17 +419,94 @@ def build_sprint_data(ado, sprint: str, team_override: list[dict] | None = None)
                 pass
 
     day_info = get_sprint_day_info(sprint_info)
+
+    return {
+        "sprint_info": sprint_info,
+        "day_info": day_info,
+        "items": items,
+        "capacity": cap_members,
+        "team_off": team_off,
+        "team_off_dates": team_off_dates,
+    }
+
+
+def build_sprint_data(ado, sprint: str, team_override: list[dict] | None = None,
+                      project_sprint_pairs: list[dict] | None = None) -> dict:
+    """Fetch ALL work items for one or more project+sprint combos.
+    Returns merged items. Frontend processes everything client-side.
+
+    project_sprint_pairs: [{"project": "X", "sprint": "X\\Sprint 1"}, ...]
+    If not provided, falls back to single sprint query on the default project.
+    """
+    lookup = get_team_lookup()
+
+    # Build list of (project, sprint) pairs to query
+    pairs = []
+    if project_sprint_pairs:
+        for ps in project_sprint_pairs:
+            pairs.append((ps["project"], ps["sprint"]))
+    else:
+        # Legacy single-project mode: extract project from sprint path or use default
+        proj = sprint.split("\\")[0] if "\\" in sprint else ado.project
+        pairs.append((proj, sprint))
+
+    # Fetch data for each pair and merge
+    all_items = []
+    all_cap_members = []
+    primary_sprint_info = None
+    primary_day_info = None
+    total_team_off = 0
+    all_team_off_dates = []
+    seen_ids = set()
+    seen_cap = set()
+    selected_sprints = []
+
+    for proj, sp in pairs:
+        result = _fetch_one_sprint(ado, proj, sp, lookup)
+        sprint_label = sp.rsplit("\\", 1)[-1] if "\\" in sp else sp
+        selected_sprints.append({"project": proj, "sprint": sp, "sprint_name": sprint_label})
+
+        # Use first pair as primary for day_info and sprint_info
+        if primary_sprint_info is None:
+            primary_sprint_info = result["sprint_info"]
+            primary_day_info = result["day_info"]
+
+        # Merge items (deduplicate by ID)
+        for item in result["items"]:
+            if item["id"] not in seen_ids:
+                seen_ids.add(item["id"])
+                all_items.append(item)
+
+        # Merge capacity (deduplicate by uniqueName)
+        for cap in result["capacity"]:
+            cap_key = cap["uniqueName"].lower()
+            if cap_key and cap_key not in seen_cap:
+                seen_cap.add(cap_key)
+                all_cap_members.append(cap)
+
+        # Accumulate team off (use max across projects)
+        if result["team_off"] > total_team_off:
+            total_team_off = result["team_off"]
+            all_team_off_dates = result["team_off_dates"]
+
+    if not primary_sprint_info:
+        sprint_name = sprint.rsplit("\\", 1)[-1] if "\\" in sprint else sprint
+        primary_sprint_info = {"name": sprint_name, "path": sprint}
+    if not primary_day_info:
+        primary_day_info = get_sprint_day_info(primary_sprint_info)
+
     team = load_team_data(team_override)
 
     return {
-        "sprint": sprint_info,
-        "day_info": day_info,
+        "sprint": primary_sprint_info,
+        "day_info": primary_day_info,
         "team": [{"displayName": m["displayName"], "uniqueName": m.get("uniqueName", ""), "id": m.get("id", "")} for m in team],
-        "capacity": cap_members,
-        "team_days_off": team_off,
-        "team_off_dates": team_off_dates,
-        "items": items,
+        "capacity": all_cap_members,
+        "team_days_off": total_team_off,
+        "team_off_dates": all_team_off_dates,
+        "items": all_items,
         "today": date.today().isoformat(),
+        "selected_sprints": selected_sprints,
     }
 
 
