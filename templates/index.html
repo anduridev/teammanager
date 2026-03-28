@@ -1416,7 +1416,7 @@ async function sendMsg(){
         if(d.chat_id)currentChatId=d.chat_id;
         addTools(d.tool_calls);if(d.reply)addMsg('assistant',d.reply);
         saveChat();
-    }catch(e){hideTyping();addMsg('assistant','Connection error. Is the server running?')}
+    }catch(e){hideTyping();addMsg('assistant','Error: '+(e.message||'Connection failed. Please try again.'))}
     finally{busy=false;document.getElementById('sendBtn').disabled=false;inp.focus()}
 }
 

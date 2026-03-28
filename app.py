@@ -699,7 +699,10 @@ def chat():
     if not chat_id:
         chat_id = os.urandom(16).hex()
     session["session_id"] = chat_id
-    result = process_chat(ado, user_message, chat_id)
+    try:
+        result = process_chat(ado, user_message, chat_id)
+    except Exception as e:
+        return jsonify({"error": f"AI processing failed: {str(e)}"}), 500
     if "error" in result and "reply" not in result:
         return jsonify(result), 500
     return jsonify(result)

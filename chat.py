@@ -161,23 +161,31 @@ def process_chat(ado, user_message: str, chat_id: str) -> dict:
     messages.append({"role": "user", "content": user_message})
 
     tool_calls_log = []
-    while True:
-        response = ai.chat.completions.create(
-            model="gpt-4o", messages=messages, tools=TOOLS, tool_choice="auto",
-        )
-        msg = response.choices[0].message
-        msg_dict = {"role": "assistant", "content": msg.content}
-        if msg.tool_calls:
-            msg_dict["tool_calls"] = [{"id": tc.id, "type": "function", "function": {"name": tc.function.name, "arguments": tc.function.arguments}} for tc in msg.tool_calls]
-        messages.append(msg_dict)
+    try:
+        while True:
+            response = ai.chat.completions.create(
+                model="gpt-4o", messages=messages, tools=TOOLS, tool_choice="auto",
+            )
+            msg = response.choices[0].message
+            msg_dict = {"role": "assistant", "content": msg.content}
+            if msg.tool_calls:
+                msg_dict["tool_calls"] = [{"id": tc.id, "type": "function", "function": {"name": tc.function.name, "arguments": tc.function.arguments}} for tc in msg.tool_calls]
+            messages.append(msg_dict)
 
-        if not msg.tool_calls:
-            break
+            if not msg.tool_calls:
+                break
 
-        for tc in msg.tool_calls:
-            result = execute_tool(ado, tc.function.name, json.loads(tc.function.arguments))
-            tool_calls_log.append({"tool": tc.function.name, "result": json.loads(result)})
-            messages.append({"role": "tool", "tool_call_id": tc.id, "content": result})
+            for tc in msg.tool_calls:
+                result = execute_tool(ado, tc.function.name, json.loads(tc.function.arguments))
+                tool_calls_log.append({"tool": tc.function.name, "result": json.loads(result)})
+                messages.append({"role": "tool", "tool_call_id": tc.id, "content": result})
+    except Exception as e:
+        error_msg = str(e)
+        if "api_key" in error_msg.lower() or "auth" in error_msg.lower():
+            return {"error": "OpenAI API key is invalid or expired. Check OPENAI_API_KEY in .env"}
+        if "connect" in error_msg.lower() or "timeout" in error_msg.lower():
+            return {"error": "Could not reach OpenAI API. Check network/firewall on the deployed server."}
+        return {"error": f"AI error: {error_msg}"}
 
     return {"reply": msg.content or "", "tool_calls": tool_calls_log, "chat_id": chat_id}
 
