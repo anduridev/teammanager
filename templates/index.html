@@ -1834,22 +1834,26 @@ function tmRemoveMember(key){
     tmRenderTeamTable();
 }
 
+let _tmSortedKeys=[];
 function tmRenderTeamTable(){
     const el=document.getElementById('tmBody');
     const count=document.getElementById('tmCount');
     count.textContent='('+tmSelected.size+')';
-    if(!tmSelected.size){el.innerHTML='<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:20px;font-size:12px">No team members yet. Search and add above.</td></tr>';return}
+    if(!tmSelected.size){_tmSortedKeys=[];el.innerHTML='<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:20px;font-size:12px">No team members yet. Search and add above.</td></tr>';return}
     let h='';
     const sorted=Array.from(tmSelected.entries()).sort((a,b)=>a[1].displayName.localeCompare(b[1].displayName));
-    for(const[key,m] of sorted){
+    _tmSortedKeys=sorted.map(e=>e[0]);
+    for(let i=0;i<sorted.length;i++){
+        const[key,m]=sorted[i];
         const initials=m.displayName.split(/[\s.]+/).map(w=>(w[0]||'')).slice(0,2).join('').toUpperCase();
         h+=`<tr style="border-bottom:1px solid #f0f1f3">
         <td style="padding:8px 14px;font-weight:500;font-size:13px"><div style="display:flex;align-items:center;gap:10px"><div style="width:28px;height:28px;border-radius:50%;background:var(--accent-l);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${initials}</div>${esc(m.displayName)}</div></td>
         <td style="padding:8px 14px;font-size:11px;color:var(--sec)">${esc(m.uniqueName||'—')}</td>
-        <td style="padding:8px 14px;text-align:right"><button onclick="tmRemoveMember('${key.replace(/\\/g,'\\\\')}');event.stopPropagation()" style="padding:3px 10px;border:1px solid #fecaca;background:var(--red-l);color:var(--red);border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:500">Remove</button></td></tr>`;
+        <td style="padding:8px 14px;text-align:right"><button onclick="tmRemoveMemberIdx(${i});event.stopPropagation()" style="padding:3px 10px;border:1px solid #fecaca;background:var(--red-l);color:var(--red);border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:500">Remove</button></td></tr>`;
     }
     el.innerHTML=h;
 }
+function tmRemoveMemberIdx(i){const key=_tmSortedKeys[i];if(key!=null)tmSelected.delete(key);tmRenderTeamTable()}
 
 // Close search dropdown on outside click
 document.addEventListener('click',e=>{
@@ -1862,10 +1866,9 @@ async function tmSave(){
     const members=Array.from(tmSelected.values()).sort((a,b)=>a.displayName.localeCompare(b.displayName));
     const btn=document.getElementById('tmSaveBtn');btn.disabled=true;btn.textContent='Saving...';
     try{const r=await fetch('/api/selected-users',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({members})});const d=await r.json();
-    if(d.ok){document.getElementById('tmStatus').innerHTML=`<div style="font-size:12px;color:var(--green);margin-bottom:8px">Saved ${members.length} team members. Refresh to update dashboard.</div>`;
-    document.getElementById('tmInfoText').textContent=members.length+' members saved'}}
+    if(d.ok){document.getElementById('tmStatus').innerHTML=`<div style="font-size:12px;color:var(--green);margin-bottom:8px">Saved ${members.length} team members. Refresh to update dashboard.</div>`}}
     catch(e){document.getElementById('tmStatus').innerHTML=`<div style="color:var(--red);font-size:12px">Error: ${e.message}</div>`}
-    finally{btn.disabled=false;btn.textContent='Save Selection'}
+    finally{btn.disabled=false;btn.textContent='Save Changes'}
 }
 
 // ── Project Selection ──
@@ -1879,7 +1882,11 @@ async function tmFetchProjects(){
         tmProjects=d.projects||[];
         // Load currently saved projects
         const r2=await fetch('/api/my-projects');const d2=await r2.json();
-        tmSelectedProjects=new Set((d2.projects||[]).map(p=>p.toLowerCase()));
+        tmSelectedProjects=new Set();
+        for(const p of d2.projects||[]){
+            if(typeof p==='string')tmSelectedProjects.add(p.toLowerCase());
+            else if(p.project)tmSelectedProjects.add(p.project.toLowerCase());
+        }
         tmRenderProjects();
     }catch(e){document.getElementById('projStatus').innerHTML=`<div style="color:var(--red);font-size:12px;margin-bottom:8px">Error: ${e.message}</div>`}
     finally{btn.disabled=false;btn.textContent='Load Projects'}
@@ -1889,17 +1896,19 @@ function tmRenderProjects(){
     const el=document.getElementById('projList');
     if(!tmProjects.length){el.innerHTML='<span style="font-size:12px;color:var(--muted)">No projects found</span>';return}
     let h='';
-    for(const p of tmProjects){
+    for(let i=0;i<tmProjects.length;i++){
+        const p=tmProjects[i];
         const sel=tmSelectedProjects.has(p.name.toLowerCase());
-        h+=`<button onclick="tmToggleProject('${esc(p.name)}')" style="padding:6px 14px;border-radius:7px;font-size:12px;font-weight:500;font-family:inherit;cursor:pointer;border:1px solid ${sel?'var(--accent)':'var(--border)'};background:${sel?'var(--accent-l)':'var(--white)'};color:${sel?'var(--accent)':'var(--sec)'};transition:all .15s">${esc(p.name)}</button>`;
+        h+=`<button onclick="tmToggleProjectIdx(${i})" style="padding:6px 14px;border-radius:7px;font-size:12px;font-weight:500;font-family:inherit;cursor:pointer;border:1px solid ${sel?'var(--accent)':'var(--border)'};background:${sel?'var(--accent-l)':'var(--white)'};color:${sel?'var(--accent)':'var(--sec)'};transition:all .15s">${esc(p.name)}</button>`;
     }
     el.innerHTML=h;
     const info=document.getElementById('projInfo');
     info.textContent=tmSelectedProjects.size?tmSelectedProjects.size+' project(s) selected':'All projects (default)';
 }
 
-function tmToggleProject(name){
-    const key=name.toLowerCase();
+function tmToggleProjectIdx(i){
+    const p=tmProjects[i];if(!p)return;
+    const key=p.name.toLowerCase();
     if(tmSelectedProjects.has(key))tmSelectedProjects.delete(key);else tmSelectedProjects.add(key);
     tmRenderProjects();
 }
@@ -1950,12 +1959,13 @@ function adminRenderMgrs(){
     const el=document.getElementById('adminMgrBody');
     if(!adminManagers.length){el.innerHTML='<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:24px;font-size:12px">No managers assigned yet</td></tr>';return}
     let h='';
-    for(const m of adminManagers){
+    for(let i=0;i<adminManagers.length;i++){
+        const m=adminManagers[i];
         const initials=m.displayName.split(/[\s.]+/).map(w=>(w[0]||'')).slice(0,2).join('').toUpperCase();
         h+=`<tr style="border-bottom:1px solid #f0f1f3">
         <td style="padding:10px 14px;font-weight:500;font-size:13px"><div style="display:flex;align-items:center;gap:10px"><div style="width:28px;height:28px;border-radius:50%;background:var(--accent-l);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${initials}</div>${esc(m.displayName)}</div></td>
         <td style="padding:10px 14px;font-size:11px;color:var(--sec)">${esc(m.uniqueName||'—')}</td>
-        <td style="padding:10px 14px;text-align:right"><button onclick="adminRemove('${(m.uniqueName||'').replace(/\\/g,'\\\\')}','${esc(m.displayName)}')" style="padding:4px 12px;border:1px solid #fecaca;background:var(--red-l);color:var(--red);border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:500;transition:all .15s">Remove</button></td></tr>`;
+        <td style="padding:10px 14px;text-align:right"><button onclick="adminRemoveIdx(${i})" style="padding:4px 12px;border:1px solid #fecaca;background:var(--red-l);color:var(--red);border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:500;transition:all .15s">Remove</button></td></tr>`;
     }
     el.innerHTML=h;
 }
@@ -2029,7 +2039,9 @@ document.addEventListener('click',e=>{
     if(dd&&inp&&!dd.contains(e.target)&&e.target!==inp)dd.style.display='none';
 });
 
-async function adminRemove(uniqueName, name){
+async function adminRemoveIdx(i){
+    const m=adminManagers[i];if(!m)return;
+    const uniqueName=m.uniqueName||'';const name=m.displayName;
     if(!confirm('Remove manager role for '+name+'?'))return;
     try{const r=await fetch('/api/admin/managers',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({uniqueName})});
     const d=await r.json();if(d.ok){adminManagers=d.managers;adminRenderMgrs();
