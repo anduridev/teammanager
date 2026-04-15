@@ -10,9 +10,46 @@ from helpers import (
     parse_hours_from_title,
 )
 
+# ── PBI prefix filter helpers ──
+# Set per-request by app.py before calling analytics functions.
+_current_pbi_prefix = ""
+
+
+def set_pbi_prefix(prefix: str):
+    """Set the PBI code prefix for the current request."""
+    global _current_pbi_prefix
+    _current_pbi_prefix = prefix or ""
+
+
+def _pbi_title_filter() -> str:
+    """WIQL clause to filter PBIs by the current prefix."""
+    if _current_pbi_prefix:
+        return f"AND [System.Title] CONTAINS '{_current_pbi_prefix}' "
+    return ""
+
+
+def _filter_tasks_by_pbis(tasks: list, pbi_ids: set) -> list:
+    """Keep only tasks whose parent is in the given PBI ID set."""
+    if not _current_pbi_prefix:
+        return tasks
+    return [t for t in tasks if get_parent_id(t) in pbi_ids]
+
+
+def _pbi_id_set(pbis: list) -> set:
+    """Extract the set of PBI IDs from a list of work items."""
+    return {wi["id"] for wi in pbis}
+
 
 def build_team_workload(ado, sprint: str, sprint_days: int = 10) -> dict:
     capacity_per_member = sprint_days * HOURS_PER_DAY
+
+    pbi_wiql = (
+        f"SELECT [System.Id] FROM WorkItems "
+        f"WHERE [System.IterationPath] = '{sprint}' "
+        f"AND [System.WorkItemType] = 'Product Backlog Item' "
+        f"{_pbi_title_filter()}"
+    )
+    pbi_ids = _pbi_id_set(ado.query_work_items(pbi_wiql))
 
     wiql = (
         f"SELECT [System.Id] FROM WorkItems "
@@ -20,7 +57,7 @@ def build_team_workload(ado, sprint: str, sprint_days: int = 10) -> dict:
         f"AND [System.WorkItemType] = 'Task' "
         f"ORDER BY [System.AssignedTo]"
     )
-    all_tasks = ado.query_work_items(wiql)
+    all_tasks = _filter_tasks_by_pbis(ado.query_work_items(wiql), pbi_ids)
 
     team_data = {}
     for member in get_team_members():
@@ -88,16 +125,18 @@ def build_sprint_summary(ado, sprint: str) -> dict:
     pbi_wiql = (
         f"SELECT [System.Id] FROM WorkItems "
         f"WHERE [System.IterationPath] = '{sprint}' "
-        f"AND [System.WorkItemType] = 'Product Backlog Item'"
+        f"AND [System.WorkItemType] = 'Product Backlog Item' "
+        f"{_pbi_title_filter()}"
     )
     pbis = ado.query_work_items(pbi_wiql)
+    pbi_ids = _pbi_id_set(pbis)
 
     task_wiql = (
         f"SELECT [System.Id] FROM WorkItems "
         f"WHERE [System.IterationPath] = '{sprint}' "
         f"AND [System.WorkItemType] = 'Task'"
     )
-    tasks = ado.query_work_items(task_wiql)
+    tasks = _filter_tasks_by_pbis(ado.query_work_items(task_wiql), pbi_ids)
 
     pbi_states = {}
     for wi in pbis:
@@ -129,6 +168,14 @@ def build_sprint_summary(ado, sprint: str) -> dict:
 
 
 def build_tasks_by_state(ado, sprint: str, states: list[str]) -> dict:
+    pbi_wiql = (
+        f"SELECT [System.Id] FROM WorkItems "
+        f"WHERE [System.IterationPath] = '{sprint}' "
+        f"AND [System.WorkItemType] = 'Product Backlog Item' "
+        f"{_pbi_title_filter()}"
+    )
+    pbi_ids = _pbi_id_set(ado.query_work_items(pbi_wiql))
+
     state_filter = " OR ".join(f"[System.State] = '{s}'" for s in states)
     wiql = (
         f"SELECT [System.Id] FROM WorkItems "
@@ -137,7 +184,7 @@ def build_tasks_by_state(ado, sprint: str, states: list[str]) -> dict:
         f"AND ({state_filter}) "
         f"ORDER BY [System.AssignedTo]"
     )
-    results = ado.query_work_items(wiql)
+    results = _filter_tasks_by_pbis(ado.query_work_items(wiql), pbi_ids)
     items = []
     for wi in results:
         f = wi["fields"]
@@ -153,6 +200,14 @@ def build_tasks_by_state(ado, sprint: str, states: list[str]) -> dict:
 
 
 def build_member_tasks(ado, member: str, sprint: str) -> dict:
+    pbi_wiql = (
+        f"SELECT [System.Id] FROM WorkItems "
+        f"WHERE [System.IterationPath] = '{sprint}' "
+        f"AND [System.WorkItemType] = 'Product Backlog Item' "
+        f"{_pbi_title_filter()}"
+    )
+    pbi_ids = _pbi_id_set(ado.query_work_items(pbi_wiql))
+
     unique = find_unique_name(member)
     filter_clause = f"[System.AssignedTo] = '{unique}'" if unique else f"[System.AssignedTo] = '{member}'"
     wiql = (
@@ -162,7 +217,7 @@ def build_member_tasks(ado, member: str, sprint: str) -> dict:
         f"AND {filter_clause} "
         f"ORDER BY [System.State]"
     )
-    tasks = ado.query_work_items(wiql)
+    tasks = _filter_tasks_by_pbis(ado.query_work_items(wiql), pbi_ids)
 
     items = []
     total_remaining = total_completed = total_allocated = 0
@@ -198,6 +253,14 @@ def build_member_cross_project_tasks(ado, member: str, sprint: str) -> dict:
     unique = find_unique_name(member)
     filter_clause = f"[System.AssignedTo] = '{unique}'" if unique else f"[System.AssignedTo] = '{member}'"
 
+    pbi_wiql = (
+        f"SELECT [System.Id] FROM WorkItems "
+        f"WHERE [System.IterationPath] = '{sprint}' "
+        f"AND [System.WorkItemType] = 'Product Backlog Item' "
+        f"{_pbi_title_filter()}"
+    )
+    pbi_ids = _pbi_id_set(ado.query_work_items(pbi_wiql))
+
     # Query without project filter to search across all projects
     wiql = (
         f"SELECT [System.Id] FROM WorkItems "
@@ -206,7 +269,7 @@ def build_member_cross_project_tasks(ado, member: str, sprint: str) -> dict:
         f"AND [System.State] <> 'Closed' AND [System.State] <> 'Removed' "
         f"ORDER BY [System.ChangedDate] DESC"
     )
-    all_tasks = ado.query_work_items_cross_project(wiql)
+    all_tasks = _filter_tasks_by_pbis(ado.query_work_items_cross_project(wiql), pbi_ids)
 
     # Also get sprint-specific tasks from current project
     sprint_wiql = (
@@ -216,7 +279,7 @@ def build_member_cross_project_tasks(ado, member: str, sprint: str) -> dict:
         f"AND {filter_clause} "
         f"ORDER BY [System.State]"
     )
-    sprint_tasks = ado.query_work_items(sprint_wiql)
+    sprint_tasks = _filter_tasks_by_pbis(ado.query_work_items(sprint_wiql), pbi_ids)
 
     # Merge: sprint tasks first, then cross-project (deduplicated)
     seen_ids = set()
@@ -264,13 +327,30 @@ def build_member_cross_project_tasks(ado, member: str, sprint: str) -> dict:
 
 
 def build_unassigned(ado, sprint: str) -> dict:
+    pbi_wiql = (
+        f"SELECT [System.Id] FROM WorkItems "
+        f"WHERE [System.IterationPath] = '{sprint}' "
+        f"AND [System.WorkItemType] = 'Product Backlog Item' "
+        f"{_pbi_title_filter()}"
+    )
+    pbi_ids = _pbi_id_set(ado.query_work_items(pbi_wiql))
+
     wiql = (
         f"SELECT [System.Id] FROM WorkItems "
         f"WHERE [System.IterationPath] = '{sprint}' "
         f"AND [System.WorkItemType] IN ('Task', 'Product Backlog Item') "
-        f"AND [System.AssignedTo] = ''"
+        f"AND [System.AssignedTo] = '' "
+        f"{_pbi_title_filter()}"
     )
-    results = ado.query_work_items(wiql)
+    all_results = ado.query_work_items(wiql)
+    # Keep PBIs matching prefix + tasks whose parent is a matching PBI
+    results = []
+    for wi in all_results:
+        wtype = wi["fields"].get("System.WorkItemType", "")
+        if wtype == "Product Backlog Item":
+            results.append(wi)
+        elif get_parent_id(wi) in pbi_ids:
+            results.append(wi)
     items = []
     for wi in results:
         f = wi["fields"]
@@ -310,9 +390,31 @@ def _fetch_one_sprint(ado, project: str, sprint: str, lookup: dict):
         f"ORDER BY [System.WorkItemType], [System.AssignedTo]"
     )
     try:
-        all_items = ado.query_work_items(wiql, project=project)
+        raw_items = ado.query_work_items(wiql, project=project)
     except Exception:
+        raw_items = []
+
+    # Filter to prefix-matching PBIs and their tasks/bugs
+    if _current_pbi_prefix:
+        pbi_ids = set()
+        for wi in raw_items:
+            f = wi["fields"]
+            if f.get("System.WorkItemType") == "Product Backlog Item":
+                title = f.get("System.Title", "")
+                if title.upper().startswith(_current_pbi_prefix.upper()):
+                    pbi_ids.add(wi["id"])
         all_items = []
+        for wi in raw_items:
+            f = wi["fields"]
+            wtype = f.get("System.WorkItemType", "")
+            if wtype == "Product Backlog Item":
+                if wi["id"] in pbi_ids:
+                    all_items.append(wi)
+            else:
+                if get_parent_id(wi) in pbi_ids:
+                    all_items.append(wi)
+    else:
+        all_items = raw_items
 
     # Capacity
     capacity_data = []
@@ -524,12 +626,20 @@ def build_burndown(ado, sprint: str) -> dict:
     start = datetime.fromisoformat(start_date.replace("Z", "+00:00")).date()
     end = datetime.fromisoformat(end_date.replace("Z", "+00:00")).date()
 
+    pbi_wiql = (
+        f"SELECT [System.Id] FROM WorkItems "
+        f"WHERE [System.IterationPath] = '{sprint}' "
+        f"AND [System.WorkItemType] = 'Product Backlog Item' "
+        f"{_pbi_title_filter()}"
+    )
+    pbi_ids = _pbi_id_set(ado.query_work_items(pbi_wiql))
+
     wiql = (
         f"SELECT [System.Id] FROM WorkItems "
         f"WHERE [System.IterationPath] = '{sprint}' "
         f"AND [System.WorkItemType] = 'Task'"
     )
-    tasks = ado.query_work_items(wiql)
+    tasks = _filter_tasks_by_pbis(ado.query_work_items(wiql), pbi_ids)
 
     total_remaining = 0
     total_original = 0
@@ -569,12 +679,20 @@ def build_burndown(ado, sprint: str) -> dict:
 
 
 def build_standup(ado, sprint: str) -> dict:
+    pbi_wiql = (
+        f"SELECT [System.Id] FROM WorkItems "
+        f"WHERE [System.IterationPath] = '{sprint}' "
+        f"AND [System.WorkItemType] = 'Product Backlog Item' "
+        f"{_pbi_title_filter()}"
+    )
+    pbi_ids = _pbi_id_set(ado.query_work_items(pbi_wiql))
+
     wiql = (
         f"SELECT [System.Id] FROM WorkItems "
         f"WHERE [System.IterationPath] = '{sprint}' "
         f"AND [System.WorkItemType] = 'Task'"
     )
-    tasks = ado.query_work_items(wiql)
+    tasks = _filter_tasks_by_pbis(ado.query_work_items(wiql), pbi_ids)
 
     today = date.today()
     yesterday = today - timedelta(days=1)
@@ -629,6 +747,14 @@ def build_sprint_compare(ado, sprint1: str, sprint2: str) -> dict:
 
 
 def build_stale_items(ado, sprint: str, days: int = 2) -> dict:
+    pbi_wiql = (
+        f"SELECT [System.Id] FROM WorkItems "
+        f"WHERE [System.IterationPath] = '{sprint}' "
+        f"AND [System.WorkItemType] = 'Product Backlog Item' "
+        f"{_pbi_title_filter()}"
+    )
+    pbi_ids = _pbi_id_set(ado.query_work_items(pbi_wiql))
+
     wiql = (
         f"SELECT [System.Id] FROM WorkItems "
         f"WHERE [System.IterationPath] = '{sprint}' "
@@ -637,7 +763,7 @@ def build_stale_items(ado, sprint: str, days: int = 2) -> dict:
         f"AND [System.ChangedDate] < @today - {days} "
         f"ORDER BY [System.ChangedDate] ASC"
     )
-    tasks = ado.query_work_items(wiql)
+    tasks = _filter_tasks_by_pbis(ado.query_work_items(wiql), pbi_ids)
     items = []
     for wi in tasks:
         f = wi["fields"]
@@ -662,16 +788,18 @@ def build_pbi_progress(ado, sprint: str) -> dict:
     pbi_wiql = (
         f"SELECT [System.Id] FROM WorkItems "
         f"WHERE [System.IterationPath] = '{sprint}' "
-        f"AND [System.WorkItemType] = 'Product Backlog Item'"
+        f"AND [System.WorkItemType] = 'Product Backlog Item' "
+        f"{_pbi_title_filter()}"
     )
     pbis = ado.query_work_items(pbi_wiql)
+    pbi_ids = _pbi_id_set(pbis)
 
     task_wiql = (
         f"SELECT [System.Id] FROM WorkItems "
         f"WHERE [System.IterationPath] = '{sprint}' "
         f"AND [System.WorkItemType] = 'Task'"
     )
-    tasks = ado.query_work_items(task_wiql)
+    tasks = _filter_tasks_by_pbis(ado.query_work_items(task_wiql), pbi_ids)
 
     pbi_tasks = {}
     for wi in tasks:
@@ -723,12 +851,21 @@ def build_velocity(ado, count: int = 5) -> dict:
     for s in relevant:
         sprint_path = s["path"]
         sprint_name = s["name"]
+
+        pbi_wiql = (
+            f"SELECT [System.Id] FROM WorkItems "
+            f"WHERE [System.IterationPath] = '{sprint_path}' "
+            f"AND [System.WorkItemType] = 'Product Backlog Item' "
+            f"{_pbi_title_filter()}"
+        )
+        pbi_ids = _pbi_id_set(ado.query_work_items(pbi_wiql))
+
         wiql = (
             f"SELECT [System.Id] FROM WorkItems "
             f"WHERE [System.IterationPath] = '{sprint_path}' "
             f"AND [System.WorkItemType] = 'Task'"
         )
-        tasks = ado.query_work_items(wiql)
+        tasks = _filter_tasks_by_pbis(ado.query_work_items(wiql), pbi_ids)
 
         sprint_data = {member: 0 for member in get_team_members()}
 
@@ -753,13 +890,21 @@ def build_velocity(ado, count: int = 5) -> dict:
 
 
 def build_bugs(ado, sprint: str) -> dict:
+    pbi_wiql = (
+        f"SELECT [System.Id] FROM WorkItems "
+        f"WHERE [System.IterationPath] = '{sprint}' "
+        f"AND [System.WorkItemType] = 'Product Backlog Item' "
+        f"{_pbi_title_filter()}"
+    )
+    pbi_ids = _pbi_id_set(ado.query_work_items(pbi_wiql))
+
     wiql = (
         f"SELECT [System.Id] FROM WorkItems "
         f"WHERE [System.IterationPath] = '{sprint}' "
         f"AND [System.WorkItemType] = 'Bug' "
         f"ORDER BY [System.CreatedDate] ASC"
     )
-    bugs = ado.query_work_items(wiql)
+    bugs = _filter_tasks_by_pbis(ado.query_work_items(wiql), pbi_ids)
     items = []
     active_count = resolved_count = 0
     for wi in bugs:
@@ -799,12 +944,20 @@ def build_sprint_health(ado, sprint: str) -> dict:
             break
     day_info = get_sprint_day_info(sprint_info)
 
+    pbi_wiql = (
+        f"SELECT [System.Id] FROM WorkItems "
+        f"WHERE [System.IterationPath] = '{sprint}' "
+        f"AND [System.WorkItemType] = 'Product Backlog Item' "
+        f"{_pbi_title_filter()}"
+    )
+    pbi_ids = _pbi_id_set(ado.query_work_items(pbi_wiql))
+
     wiql = (
         f"SELECT [System.Id] FROM WorkItems "
         f"WHERE [System.IterationPath] = '{sprint}' "
         f"AND [System.WorkItemType] = 'Task'"
     )
-    tasks = ado.query_work_items(wiql)
+    tasks = _filter_tasks_by_pbis(ado.query_work_items(wiql), pbi_ids)
 
     total = len(tasks)
     done = in_prog = new_count = 0
@@ -916,6 +1069,239 @@ def build_sprint_health(ado, sprint: str) -> dict:
     }
 
 
+def build_daily_status(ado, sprint: str) -> dict:
+    """Build the Daily Sprint Status Email data — all sections in one call."""
+    # ── Sprint info ──
+    sprints = ado.get_iterations()
+    sprint_info = {}
+    sprint_number = ""
+    for s in sprints:
+        if s["path"] == sprint:
+            sprint_info = {
+                "name": s["name"], "path": s["path"],
+                "start_date": s.get("attributes", {}).get("startDate"),
+                "end_date": s.get("attributes", {}).get("finishDate"),
+            }
+            # Extract sprint number from name (e.g. "Sprint 1" → "1")
+            parts = s["name"].rsplit(" ", 1)
+            sprint_number = parts[-1] if len(parts) > 1 else s["name"]
+            break
+
+    today = date.today()
+    day_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    today_str = today.strftime(f"%d-%b-%Y ({day_names[today.weekday()]})")
+
+    # ── Fetch PBIs and Tasks ──
+    pbi_wiql = (
+        f"SELECT [System.Id] FROM WorkItems "
+        f"WHERE [System.IterationPath] = '{sprint}' "
+        f"AND [System.WorkItemType] = 'Product Backlog Item' "
+        f"{_pbi_title_filter()}"
+    )
+    all_pbis = ado.query_work_items(pbi_wiql)
+    pbi_ids = _pbi_id_set(all_pbis)
+
+    task_wiql = (
+        f"SELECT [System.Id] FROM WorkItems "
+        f"WHERE [System.IterationPath] = '{sprint}' "
+        f"AND [System.WorkItemType] = 'Task'"
+    )
+    all_tasks = _filter_tasks_by_pbis(ado.query_work_items(task_wiql), pbi_ids)
+
+    bug_wiql = (
+        f"SELECT [System.Id] FROM WorkItems "
+        f"WHERE [System.IterationPath] = '{sprint}' "
+        f"AND [System.WorkItemType] = 'Bug'"
+    )
+    all_bugs = _filter_tasks_by_pbis(ado.query_work_items(bug_wiql), pbi_ids)
+
+    # ── Day Summary ──
+    pbi_completed = pbi_in_progress = pbi_not_started = 0
+    for wi in all_pbis:
+        state = wi["fields"].get("System.State", "New")
+        if state in ("Closed", "Done", "Resolved"):
+            pbi_completed += 1
+        elif state in ("Active", "In Progress"):
+            pbi_in_progress += 1
+        else:
+            pbi_not_started += 1
+
+    total_tasks = len(all_tasks)
+    tasks_done_today = 0
+    yesterday = today - timedelta(days=1)
+    if yesterday.weekday() >= 5:
+        yesterday = today - timedelta(days=(today.weekday() - 4) if today.weekday() > 0 else 3)
+
+    total_completed_hours = total_remaining_hours = total_original_hours = 0
+    for wi in all_tasks:
+        f = wi["fields"]
+        total_original_hours += f.get("Microsoft.VSTS.Scheduling.OriginalEstimate", 0) or 0
+        total_remaining_hours += f.get("Microsoft.VSTS.Scheduling.RemainingWork", 0) or 0
+        total_completed_hours += f.get("Microsoft.VSTS.Scheduling.CompletedWork", 0) or 0
+        state = f.get("System.State", "New")
+        if state in ("Closed", "Done", "Resolved"):
+            changed = f.get("System.ChangedDate", "")
+            if changed:
+                try:
+                    cd = datetime.fromisoformat(changed.replace("Z", "+00:00")).date()
+                    if cd >= yesterday:
+                        tasks_done_today += 1
+                except (ValueError, TypeError):
+                    pass
+
+    total_effort = total_original_hours if total_original_hours else (total_remaining_hours + total_completed_hours)
+    overall_progress = round((total_completed_hours / total_effort) * 100, 1) if total_effort else 0
+
+    # Blockers (tags containing "blocked" or state "Blocked")
+    blockers = 0
+    for wi in all_tasks:
+        f = wi["fields"]
+        tags = (f.get("System.Tags") or "").lower()
+        state = f.get("System.State", "")
+        if "block" in tags or state.lower() == "blocked":
+            blockers += 1
+
+    # P1 / P2 bugs
+    p1_issues = p2_issues = 0
+    for wi in all_bugs:
+        f = wi["fields"]
+        state = f.get("System.State", "New")
+        if state in ("Closed", "Done", "Resolved"):
+            continue
+        priority = f.get("Microsoft.VSTS.Common.Priority", 4)
+        if priority == 1:
+            p1_issues += 1
+        elif priority == 2:
+            p2_issues += 1
+
+    day_summary = {
+        "total_pbis": len(all_pbis),
+        "pbis_completed": pbi_completed,
+        "pbis_in_progress": pbi_in_progress,
+        "pbis_not_started": pbi_not_started,
+        "total_tasks": total_tasks,
+        "tasks_done_today": tasks_done_today,
+        "overall_progress": f"{overall_progress}%",
+        "blockers": blockers,
+        "p1_issues": p1_issues,
+        "p2_issues": p2_issues,
+    }
+
+    # ── PBI Status Update ──
+    # Build task mapping per PBI
+    pbi_tasks = {}
+    for wi in all_tasks:
+        parent = get_parent_id(wi)
+        if parent:
+            if parent not in pbi_tasks:
+                pbi_tasks[parent] = []
+            f = wi["fields"]
+            pbi_tasks[parent].append({
+                "id": wi["id"], "title": f.get("System.Title"),
+                "state": f.get("System.State"),
+                "assigned_to": get_assignee(f),
+            })
+
+    pbi_status = []
+    for wi in all_pbis:
+        f = wi["fields"]
+        pid = wi["id"]
+        children = pbi_tasks.get(pid, [])
+        total_t = len(children)
+        done_t = sum(1 for t in children if t["state"] in ("Closed", "Done", "Resolved"))
+        state = f.get("System.State", "New")
+
+        # Determine status color
+        if state in ("Closed", "Done", "Resolved"):
+            status_color = "green"
+        elif done_t > 0:
+            status_color = "yellow"
+        else:
+            status_color = "blue"
+
+        pbi_status.append({
+            "id": pid,
+            "title": f.get("System.Title", ""),
+            "tasks_done": f"{done_t} / {total_t}",
+            "status": state,
+            "status_color": status_color,
+            "eta": "",
+        })
+
+    # ── Testing Status ──
+    testing_status = []
+    for wi in all_pbis:
+        f = wi["fields"]
+        pid = wi["id"]
+        # Count bugs linked to this PBI area
+        pbi_p1 = pbi_p2 = 0
+        tested = 0
+        for bug in all_bugs:
+            bf = bug["fields"]
+            bug_parent = get_parent_id(bug)
+            if bug_parent == pid:
+                bp = bf.get("Microsoft.VSTS.Common.Priority", 4)
+                if bp == 1:
+                    pbi_p1 += 1
+                elif bp == 2:
+                    pbi_p2 += 1
+                tested += 1
+        testing_status.append({
+            "id": pid,
+            "scenarios_tested": tested,
+            "p1_issues": pbi_p1,
+            "p2_issues": pbi_p2,
+            "remarks": "",
+        })
+
+    # ── Blockers & Risks ──
+    blockers_list = []
+    for wi in all_tasks + all_bugs:
+        f = wi["fields"]
+        tags = (f.get("System.Tags") or "").lower()
+        state = f.get("System.State", "")
+        if "block" in tags or state.lower() == "blocked":
+            parent = get_parent_id(wi)
+            blockers_list.append({
+                "pbi_id": parent or wi["id"],
+                "description": f.get("System.Title", ""),
+                "raised_by": get_assignee(f),
+                "action_owner": "",
+                "eta_resolve": "",
+            })
+
+    # ── Plan for Tomorrow ──
+    plan_tomorrow = []
+    for wi in all_tasks:
+        f = wi["fields"]
+        state = f.get("System.State", "New")
+        if state in ("Active", "In Progress", "New"):
+            remaining = f.get("Microsoft.VSTS.Scheduling.RemainingWork", 0) or 0
+            if remaining > 0 or state == "New":
+                parent = get_parent_id(wi)
+                priority = f.get("Microsoft.VSTS.Common.Priority", 4)
+                plan_tomorrow.append({
+                    "pbi_id": parent or "",
+                    "task": f.get("System.Title", ""),
+                    "owner": get_assignee(f),
+                    "priority": priority,
+                    "notes": "",
+                })
+    # Sort by priority
+    plan_tomorrow.sort(key=lambda x: x["priority"])
+
+    return {
+        "sprint_number": sprint_number,
+        "sprint_name": sprint_info.get("name", sprint),
+        "date": today_str,
+        "day_summary": day_summary,
+        "pbi_status": pbi_status,
+        "testing_status": testing_status,
+        "blockers": blockers_list,
+        "plan_tomorrow": plan_tomorrow,
+    }
+
+
 def build_dashboard(ado, sprint: str) -> dict:
     """Returns everything needed for the dashboard — one call."""
     sprint_name = sprint.rsplit("\\", 1)[-1] if "\\" in sprint else sprint
@@ -932,19 +1318,21 @@ def build_dashboard(ado, sprint: str) -> dict:
             iteration_id = s.get("id")
             break
 
+    pbi_wiql = (
+        f"SELECT [System.Id] FROM WorkItems "
+        f"WHERE [System.IterationPath] = '{sprint}' "
+        f"AND [System.WorkItemType] = 'Product Backlog Item' "
+        f"{_pbi_title_filter()}"
+    )
+    all_pbis = ado.query_work_items(pbi_wiql)
+    pbi_ids = _pbi_id_set(all_pbis)
+
     wiql = (
         f"SELECT [System.Id] FROM WorkItems "
         f"WHERE [System.IterationPath] = '{sprint}' "
         f"AND [System.WorkItemType] = 'Task'"
     )
-    all_tasks = ado.query_work_items(wiql)
-
-    pbi_wiql = (
-        f"SELECT [System.Id] FROM WorkItems "
-        f"WHERE [System.IterationPath] = '{sprint}' "
-        f"AND [System.WorkItemType] = 'Product Backlog Item'"
-    )
-    all_pbis = ado.query_work_items(pbi_wiql)
+    all_tasks = _filter_tasks_by_pbis(ado.query_work_items(wiql), pbi_ids)
 
     pbi_states = {}
     for wi in all_pbis:

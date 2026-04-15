@@ -12,11 +12,6 @@
       "id": "0bc1667a-24c8-49fd-b158-694177b1efe1"
     },
     {
-      "uniqueName": "TFS\\sudhakiran",
-      "displayName": "sudhakiran K",
-      "id": "91690fae-a54b-4ec7-bdfd-810953ae8eed"
-    },
-    {
       "uniqueName": "TFS\\avinash",
       "displayName": "avinash",
       "id": "7f8b469e-cbf7-47ce-9218-100fef23abd2"
@@ -39,12 +34,14 @@
     {
       "uniqueName": "TFS\\ramanakumar",
       "displayName": "Ramana Kumar",
-      "id": "187e2654-8144-45b3-a384-9010d40a58d0"
+      "id": "187e2654-8144-45b3-a384-9010d40a58d0",
+      "pbi_prefix": "WEP"
     },
     {
       "uniqueName": "TFS\\srilakshmi",
       "displayName": "SriLakshmiA",
-      "id": "c8767845-c6a5-4880-95d9-97daf9d8c5f9"
+      "id": "c8767845-c6a5-4880-95d9-97daf9d8c5f9",
+      "pbi_prefix": "WEP"
     },
     {
       "uniqueName": "TFS\\Manohar.A",
@@ -60,16 +57,86 @@
       "uniqueName": "TFS\\Chandrika",
       "displayName": "Muppalla Chandrika",
       "id": "19eb27eb-6cd6-4bd4-a6a3-4ed76bb6055e"
+    },
+    {
+      "uniqueName": "TFS\\sudhakiran",
+      "displayName": "sudhakiran K",
+      "id": "91690fae-a54b-4ec7-bdfd-810953ae8eed",
+      "pbi_prefix": "WEP"
     }
   ],
   "superadmin_projects": [
     {
       "project": "Digital Bank",
-      "sprint": "Digital Bank\\Sprint 77"
+      "sprint": "Digital Bank\\Sprint 80"
+    }
+  ],
+  "superadmin_team": [
+    {
+      "displayName": "Anduri Sowjanya",
+      "id": "70e71dfd-fede-45e7-8bd0-b1692e0eb664",
+      "uniqueName": "TFS\\anduri"
     },
     {
-      "project": "AI Developer Training",
-      "sprint": "AI Developer Training\\Sprint 1"
+      "displayName": "Anusha Annabattuni",
+      "uniqueName": "TFS\\anusha",
+      "id": "75810622-183f-4f9b-9508-04229e87caca"
+    },
+    {
+      "displayName": "Janakiram guduri",
+      "id": "1c2e706c-0dc6-41f5-8e00-8922ace78421",
+      "uniqueName": "TFS\\janakiram"
+    },
+    {
+      "displayName": "Kundan Kolla",
+      "id": "f32b6149-5d8f-4e91-bd61-0398a97bb7b1",
+      "uniqueName": "TFS\\Kundankolla"
+    },
+    {
+      "displayName": "Perusomula Meghana",
+      "uniqueName": "TFS\\meghana",
+      "id": "dfe952da-b9d7-465b-bdd7-f63f9dd0da22"
+    },
+    {
+      "displayName": "Raju Kallubandi",
+      "uniqueName": "TFS\\rajuk",
+      "id": "73caf748-591e-4f98-8ae2-faf2c64f40c2"
+    },
+    {
+      "displayName": "Ramana Kumar",
+      "id": "187e2654-8144-45b3-a384-9010d40a58d0",
+      "uniqueName": "TFS\\ramanakumar"
+    },
+    {
+      "displayName": "Santoshr",
+      "id": "ff7085c1-fcba-4d15-8967-a4f94b7bc464",
+      "uniqueName": "TFS\\santoshr"
+    },
+    {
+      "displayName": "Sowmya Sri",
+      "id": "772b7e2f-5916-48ca-9feb-0b752148d7d9",
+      "uniqueName": "TFS\\swomya"
+    },
+    {
+      "displayName": "Sreedhar",
+      "id": "418ec9b4-20c2-4007-af5b-af57618f928b",
+      "uniqueName": "TFS\\sreedhar"
+    },
+    {
+      "displayName": "SriLakshmiA",
+      "id": "c8767845-c6a5-4880-95d9-97daf9d8c5f9",
+      "uniqueName": "TFS\\srilakshmi"
+    },
+    {
+      "displayName": "Swaroopa Ch",
+      "uniqueName": "TFS\\swaroopach",
+      "id": "b0a0d09c-04c5-4bc5-b4ea-18de428272ce"
+    },
+    {
+      "displayName": "Venigandla Narendra",
+      "uniqueName": "TFS\\narendra",
+      "id": "298c4a33-7964-4d4c-a2f2-4596f62b0e91"
     }
-  ]
+  ],
+  "superadmin_pbi_prefix": "WEP"
 }

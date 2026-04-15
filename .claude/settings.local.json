@@ -14,7 +14,25 @@
       "WebSearch",
       "Bash(python -c \"from analytics import build_sprint_data, _fetch_one_sprint; print\\(''analytics OK''\\)\")",
       "Bash(python -c \"from azure_devops_client import AzureDevOpsClient; print\\(''client OK''\\)\")",
-      "Bash(python -c \"from app import app; from analytics import build_sprint_data; from azure_devops_client import AzureDevOpsClient; from auth import get_manager_projects, save_manager_projects; print\\(''ALL OK''\\)\")"
+      "Bash(python -c \"from app import app; from analytics import build_sprint_data; from azure_devops_client import AzureDevOpsClient; from auth import get_manager_projects, save_manager_projects; print\\(''ALL OK''\\)\")",
+      "Bash(python -c \"import analytics; print\\('analytics OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('analytics.py'\\).read\\(\\)\\); print\\('analytics.py: syntax OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('app.py'\\).read\\(\\)\\); print\\('app.py: syntax OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('app.py', encoding='utf-8'\\).read\\(\\)\\); print\\('app.py: syntax OK'\\)\")",
+      "Bash(where python:*)",
+      "Bash(python -m pip install -r \"d:/Workspace/Task Manager/requirements.txt\")",
+      "Bash(python app.py)",
+      "Bash(python -c ':*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5000/daily-status)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5000/login)",
+      "Bash(curl -s http://localhost:5000/daily-status -L)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('analytics.py', encoding='utf-8'\\).read\\(\\)\\); print\\('analytics.py: syntax OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('config.py', encoding='utf-8'\\).read\\(\\)\\); print\\('config.py: syntax OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('analytics.py', encoding='utf-8'\\).read\\(\\)\\); print\\('analytics.py: OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('app.py', encoding='utf-8'\\).read\\(\\)\\); print\\('app.py: OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('auth.py', encoding='utf-8'\\).read\\(\\)\\); print\\('auth.py: OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('config.py', encoding='utf-8'\\).read\\(\\)\\); print\\('config.py: OK'\\)\")",
+      "Bash(curl -s -b \"session=test\" http://localhost:5000/admin)"
     ]
   }
 }

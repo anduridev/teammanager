@@ -92,6 +92,15 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
         </div>
     </div>
 
+    <div style="margin-bottom:16px">
+        <div class="card" style="padding:14px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <label style="font-size:12.5px;font-weight:600;white-space:nowrap">PBI Code Prefix</label>
+            <input type="text" id="pbiPrefix" class="search-box" style="width:140px" placeholder="e.g. WEP" oninput="this.value=this.value.toUpperCase()">
+            <button class="btn btn-primary" onclick="savePbiPrefix()" style="padding:7px 14px">Save Prefix</button>
+            <span style="font-size:11px;color:var(--sec)">Only PBIs starting with this code (and their tasks) will be shown across all views.</span>
+        </div>
+    </div>
+
     <div id="statusBar"></div>
 
     <div class="card">
@@ -237,8 +246,10 @@ async function saveSelection(){
     saveBtn.disabled=true;saveBtn.textContent='Saving...';
     try{
         const r=await fetch('/api/selected-users',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({members})});
+        if(!r.ok&&r.status===401){window.location.href='/login';return;}
         const d=await r.json();
-        if(d.ok){
+        if(d.error){showStatus('Failed to save: '+d.error,'error');}
+        else if(d.ok){
             showStatus(`Saved ${members.length} team members with TFS identities. Dashboard will use these members.`,'success');
         }
     }catch(e){showStatus('Failed to save: '+e.message,'error')}
@@ -252,8 +263,30 @@ function showStatus(msg,type){
     if(type==='success')setTimeout(()=>bar.innerHTML='',4000);
 }
 
+// ── PBI Prefix ──
+async function loadPbiPrefix(){
+    try{
+        const r=await fetch('/api/my-pbi-prefix');
+        if(r.status===401){window.location.href='/login';return;}
+        const d=await r.json();
+        document.getElementById('pbiPrefix').value=d.prefix||'';
+    }catch(e){}
+}
+
+async function savePbiPrefix(){
+    const prefix=document.getElementById('pbiPrefix').value.trim();
+    try{
+        const r=await fetch('/api/my-pbi-prefix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prefix})});
+        if(!r.ok&&r.status===401){window.location.href='/login';return;}
+        const d=await r.json();
+        if(d.error){showStatus('Failed: '+d.error,'error');}
+        else{showStatus(prefix?`PBI prefix set to "${prefix}". Only PBIs starting with "${prefix}" will be shown.`:'PBI prefix cleared. All PBIs will be shown.','success');}
+    }catch(e){showStatus('Failed to save prefix: '+e.message,'error');}
+}
+
 // Init
 (async()=>{
+    await loadPbiPrefix();
     await loadSaved();
     if(selectedMap.size>0){
         showStatus(`${selectedMap.size} team members currently saved. Fetch from TFS to modify.`,'info');

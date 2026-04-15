@@ -185,6 +185,72 @@ def save_manager_projects(user: dict, projects: list):
             return
 
 
+def get_manager_pbi_prefix(user: dict | None = None) -> str:
+    """Get the PBI code prefix for the current user.
+    - Superadmin: uses superadmin_pbi_prefix
+    - Manager: uses their own pbi_prefix
+    - Member: inherits prefix from the manager whose team they belong to
+    """
+    if user is None:
+        user = get_current_user()
+    if not user:
+        return ""
+
+    config = load_app_config()
+
+    if is_superadmin(user):
+        return config.get("superadmin_pbi_prefix", "")
+
+    # Check if user is a manager
+    entry = _find_manager_entry(user.get("uniqueName", ""))
+    if entry:
+        return entry.get("pbi_prefix", "")
+
+    # Member: find which manager's team they belong to
+    unique = user.get("uniqueName", "").lower()
+    display = user.get("displayName", "").lower()
+    user_id = user.get("id", "").lower()
+
+    for mgr in config.get("managers", []):
+        for m in mgr.get("team", []):
+            m_unique = m.get("uniqueName", "").lower()
+            m_display = m.get("displayName", "").lower()
+            m_id = m.get("id", "").lower()
+            if (unique and m_unique == unique) or \
+               (user_id and m_id == user_id) or \
+               (display and m_display == display):
+                return mgr.get("pbi_prefix", "")
+
+    # Also check superadmin's team
+    for m in config.get("superadmin_team", []):
+        m_unique = m.get("uniqueName", "").lower()
+        m_display = m.get("displayName", "").lower()
+        m_id = m.get("id", "").lower()
+        if (unique and m_unique == unique) or \
+           (user_id and m_id == user_id) or \
+           (display and m_display == display):
+            return config.get("superadmin_pbi_prefix", "")
+
+    return ""
+
+
+def save_manager_pbi_prefix(user: dict, prefix: str):
+    """Save PBI code prefix for a specific manager."""
+    config = load_app_config()
+    unique = user.get("uniqueName", "")
+
+    if is_superadmin(user):
+        config["superadmin_pbi_prefix"] = prefix
+        save_app_config(config)
+        return
+
+    for mgr in config.get("managers", []):
+        if mgr.get("uniqueName", "").lower() == unique.lower():
+            mgr["pbi_prefix"] = prefix
+            save_app_config(config)
+            return
+
+
 def get_all_manager_team_members() -> dict[str, list[dict]]:
     """Return a dict of manager uniqueName → their team members.
     Used by superadmin to see who has which team."""
@@ -202,10 +268,13 @@ def get_all_manager_team_members() -> dict[str, list[dict]]:
 
 
 def login_required(f):
-    """Redirect to /login if not authenticated."""
+    """Redirect to /login if not authenticated; return JSON 401 for API routes."""
     @wraps(f)
     def decorated(*args, **kwargs):
         if not get_current_user():
+            if request.path.startswith("/api/"):
+                from flask import jsonify
+                return jsonify({"error": "Not authenticated"}), 401
             return redirect(url_for("login_page"))
         return f(*args, **kwargs)
     return decorated

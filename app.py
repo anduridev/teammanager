@@ -21,7 +21,8 @@ from analytics import (
     build_burndown, build_standup, build_sprint_compare,
     build_stale_items, build_pbi_progress, build_velocity,
     build_bugs, build_sprint_health, build_dashboard,
-    build_member_cross_project_tasks,
+    build_member_cross_project_tasks, build_daily_status,
+    set_pbi_prefix,
 )
 from chat import (
     process_chat, save_chat_session, list_chats, load_chat,
@@ -33,6 +34,7 @@ from auth import (
     get_manager_team, save_manager_team,
     get_manager_projects, save_manager_projects,
     get_all_manager_team_members,
+    get_manager_pbi_prefix, save_manager_pbi_prefix,
 )
 
 # ── App Setup ──
@@ -45,6 +47,12 @@ app.secret_key = FLASK_SECRET_KEY
 @app.before_request
 def _begin_cache():
     ado._cache.begin()
+    # Set per-manager PBI prefix for analytics filtering
+    user = get_current_user()
+    if user:
+        set_pbi_prefix(get_manager_pbi_prefix(user))
+    else:
+        set_pbi_prefix("")
 
 
 @app.after_request
@@ -164,6 +172,24 @@ def admin_page():
     )
 
 
+@app.route("/daily-status")
+@login_required
+def daily_status_page():
+    return render_template("daily_status.html", project=AZURE_DEVOPS_PROJECT)
+
+
+@app.route("/api/daily-status")
+@login_required
+def api_daily_status():
+    sprint = _sprint_or_current()
+    if not sprint:
+        return jsonify({"error": "No sprint found"}), 400
+    try:
+        return jsonify(build_daily_status(ado, sprint))
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # ══════════════════════════════════════════════════════════════════════
 #  API — Admin (superadmin only)
 # ══════════════════════════════════════════════════════════════════════
@@ -221,6 +247,26 @@ def api_admin_remove_manager():
     return jsonify({"ok": True, "managers": managers})
 
 
+@app.route("/api/admin/manager-prefix", methods=["POST"])
+@login_required
+def api_admin_set_manager_prefix():
+    """Superadmin sets PBI prefix for a specific manager."""
+    if not is_superadmin():
+        return jsonify({"error": "Forbidden"}), 403
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Invalid JSON"}), 400
+    unique_name = data.get("uniqueName", "").strip()
+    prefix = data.get("prefix", "").strip()
+    config = load_app_config()
+    for mgr in config.get("managers", []):
+        if mgr.get("uniqueName", "").lower() == unique_name.lower():
+            mgr["pbi_prefix"] = prefix
+            save_app_config(config)
+            return jsonify({"ok": True})
+    return jsonify({"error": "Manager not found"}), 404
+
+
 # ── Project Management ──
 
 
@@ -243,6 +289,28 @@ def api_save_my_projects():
     projects = data.get("projects", [])
     save_manager_projects(user, projects)
     return jsonify({"ok": True, "projects": projects})
+
+
+@app.route("/api/my-pbi-prefix")
+@login_required
+def api_my_pbi_prefix():
+    """Get the PBI code prefix for the current manager."""
+    return jsonify({"prefix": get_manager_pbi_prefix()})
+
+
+@app.route("/api/my-pbi-prefix", methods=["POST"])
+@login_required
+def api_save_my_pbi_prefix():
+    """Save the PBI code prefix for the current manager."""
+    user = get_current_user()
+    if not (is_superadmin() or is_manager()):
+        return jsonify({"error": "Forbidden"}), 403
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Invalid JSON"}), 400
+    prefix = data.get("prefix", "").strip()
+    save_manager_pbi_prefix(user, prefix)
+    return jsonify({"ok": True, "prefix": prefix})
 
 
 @app.route("/api/tfs-projects")
@@ -319,13 +387,18 @@ def api_selected_users():
 @login_required
 def api_save_selected_users():
     user = get_current_user()
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Invalid or missing JSON body"}), 400
     members = data.get("members", [])
-    if is_superadmin() or is_manager():
-        save_manager_team(user, members)
-    else:
-        save_team(members)  # legacy fallback
-    return jsonify({"ok": True, "count": len(members)})
+    try:
+        if is_superadmin() or is_manager():
+            save_manager_team(user, members)
+        else:
+            save_team(members)  # legacy fallback
+        return jsonify({"ok": True, "count": len(members)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/sprints")

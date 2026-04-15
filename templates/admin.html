@@ -36,6 +36,10 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .btn-remove{padding:5px 12px;border-radius:6px;font-size:11px;font-weight:500;font-family:inherit;cursor:pointer;border:1px solid #fecaca;background:var(--red-l);color:var(--red);transition:all .15s}
 .btn-remove:hover{background:var(--red);color:#fff}
 .empty-msg{padding:20px;text-align:center;color:var(--muted);font-size:12px}
+.prefix-input{width:80px;padding:4px 8px;border:1px solid var(--border);border-radius:5px;font-size:11px;font-family:inherit;text-transform:uppercase;outline:none;text-align:center}
+.prefix-input:focus{border-color:var(--accent)}
+.prefix-saved{color:var(--green);font-size:10px;font-weight:500;opacity:0;transition:opacity .3s}
+.prefix-saved.show{opacity:1}
 
 .add-row{display:flex;gap:10px;padding:14px 16px;border-top:1px solid var(--border);background:#f9fafb}
 .add-row select{flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:12.5px;font-family:inherit;outline:none;cursor:pointer}
@@ -86,6 +90,31 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
             <button class="btn btn-primary" onclick="addManager()" id="addBtn" disabled>Add Manager</button>
         </div>
     </div>
+
+    <div class="section-title" style="margin-top:8px">PBI Code Prefix</div>
+    <p class="info-text">
+        Set a PBI title prefix per manager. Only PBIs whose title starts with this code (and their child tasks) will be shown.
+        Leave blank to show all PBIs. Members automatically inherit their manager's prefix.
+    </p>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Prefix Settings</h3>
+        </div>
+        <div style="padding:12px 16px;border-bottom:1px solid #f0f1f3;display:flex;align-items:center;gap:12px;background:#f9fafb">
+            <div class="manager-avatar" style="background:var(--accent);color:#fff;font-size:9px">SA</div>
+            <div class="manager-info">
+                <div class="manager-name">{{ superadmin }}</div>
+                <div class="manager-unique" style="color:var(--accent)">Superadmin</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+                <input class="prefix-input" id="saPrefix" placeholder="e.g. WEP" oninput="this.value=this.value.toUpperCase()">
+                <button class="btn btn-primary" style="padding:5px 12px;font-size:11px" onclick="saveSaPrefix()">Save</button>
+                <span class="prefix-saved" id="saPrefixSaved">Saved</span>
+            </div>
+        </div>
+        <div id="prefixList"></div>
+    </div>
 </div>
 
 <script>
@@ -123,16 +152,18 @@ function renderManagers() {
     let html = '';
     for (const m of managers) {
         const initials = m.displayName.split(/[\s.]+/).map(w => w[0] || '').slice(0, 2).join('');
+        const safeUnique = (m.uniqueName || '').replace(/\\/g, '\\\\');
         html += `<div class="manager-row">
             <div class="manager-avatar">${initials}</div>
             <div class="manager-info">
                 <div class="manager-name">${m.displayName}</div>
                 <div class="manager-unique">${m.uniqueName || '---'}</div>
             </div>
-            <button class="btn-remove" onclick="removeManager('${(m.uniqueName || '').replace(/\\/g, '\\\\')}')">Remove</button>
+            <button class="btn-remove" onclick="removeManager('${safeUnique}')">Remove</button>
         </div>`;
     }
     list.innerHTML = html;
+    renderPrefixList();
 }
 
 function renderUserDropdown() {
@@ -200,6 +231,70 @@ async function removeManager(uniqueName) {
     }
 }
 
+function renderPrefixList() {
+    const list = document.getElementById('prefixList');
+    if (!managers.length) { list.innerHTML = '<div class="empty-msg">No managers to configure</div>'; return; }
+    let html = '';
+    for (const m of managers) {
+        const initials = m.displayName.split(/[\s.]+/).map(w => w[0] || '').slice(0, 2).join('');
+        const safeUnique = (m.uniqueName || '').replace(/\\/g, '\\\\');
+        const prefix = m.pbi_prefix || '';
+        html += `<div class="manager-row">
+            <div class="manager-avatar">${initials}</div>
+            <div class="manager-info">
+                <div class="manager-name">${m.displayName}</div>
+                <div class="manager-unique">${m.uniqueName || '---'}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+                <input class="prefix-input" value="${prefix}" placeholder="e.g. WEP"
+                    oninput="this.value=this.value.toUpperCase()"
+                    onchange="savePrefix('${safeUnique}',this.value,this)">
+                <span class="prefix-saved">Saved</span>
+            </div>
+        </div>`;
+    }
+    list.innerHTML = html;
+}
+
+async function loadSaPrefix() {
+    try {
+        const r = await fetch('/api/my-pbi-prefix');
+        const d = await r.json();
+        document.getElementById('saPrefix').value = d.prefix || '';
+    } catch(e) {}
+}
+
+async function saveSaPrefix() {
+    const prefix = document.getElementById('saPrefix').value.trim();
+    try {
+        const r = await fetch('/api/my-pbi-prefix', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prefix})});
+        const d = await r.json();
+        if (d.ok) {
+            const span = document.getElementById('saPrefixSaved');
+            span.classList.add('show'); setTimeout(() => span.classList.remove('show'), 1500);
+        } else { showStatus(d.error || 'Failed', 'error'); }
+    } catch(e) { showStatus('Error: ' + e.message, 'error'); }
+}
+
+async function savePrefix(uniqueName, prefix, inputEl) {
+    try {
+        const r = await fetch('/api/admin/manager-prefix', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({uniqueName, prefix: prefix.trim()})
+        });
+        const d = await r.json();
+        if (d.ok) {
+            const span = inputEl.parentElement.querySelector('.prefix-saved');
+            if (span) { span.classList.add('show'); setTimeout(() => span.classList.remove('show'), 1500); }
+        } else {
+            showStatus(d.error || 'Failed to save prefix', 'error');
+        }
+    } catch (e) {
+        showStatus('Error saving prefix: ' + e.message, 'error');
+    }
+}
+
 function showStatus(msg, type) {
     const bar = document.getElementById('statusBar');
     bar.textContent = msg;
@@ -208,6 +303,7 @@ function showStatus(msg, type) {
 }
 
 loadData();
+loadSaPrefix();
 </script>
 </body>
 </html>
