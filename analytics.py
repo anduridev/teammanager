@@ -28,6 +28,40 @@ def _pbi_title_filter() -> str:
     return ""
 
 
+def _calc_hours(fields: dict) -> tuple[float, float, float]:
+    """Calculate (planned, remaining, completed) hours for a task.
+    Priority for planned: OriginalEstimate → parsed from title → CompletedWork+remaining.
+    Completed = planned - remaining.
+    """
+    title = fields.get("System.Title", "")
+    tfs_original = fields.get("Microsoft.VSTS.Scheduling.OriginalEstimate", 0) or 0
+    tfs_completed = fields.get("Microsoft.VSTS.Scheduling.CompletedWork", 0) or 0
+    remaining = fields.get("Microsoft.VSTS.Scheduling.RemainingWork", 0) or 0
+    state = fields.get("System.State", "")
+
+    # 1. Determine planned hours (best source first)
+    parsed = parse_hours_from_title(title)
+    planned = tfs_original or parsed
+
+    # 2. Fallback: if no planned from title/estimate, use CompletedWork + remaining
+    if not planned and tfs_completed:
+        planned = tfs_completed + remaining
+
+    # 3. Calculate completed
+    if planned and remaining <= planned:
+        completed = round(planned - remaining, 2)
+    elif planned and remaining > planned:
+        # Remaining exceeds planned (extra work added) — at least planned was done
+        completed = 0
+    elif not planned and state in ("Closed", "Done", "Resolved") and tfs_completed:
+        # Done task with no planned hours but TFS has completed work logged
+        completed = tfs_completed
+    else:
+        completed = 0
+
+    return planned, remaining, completed
+
+
 def _filter_tasks_by_pbis(tasks: list, pbi_ids: set) -> list:
     """Keep only tasks whose parent is in the given PBI ID set."""
     if not _current_pbi_prefix:
@@ -79,10 +113,8 @@ def build_team_workload(ado, sprint: str, sprint_days: int = 10) -> dict:
             continue
 
         state = fields.get("System.State", "New")
-        original = fields.get("Microsoft.VSTS.Scheduling.OriginalEstimate", 0) or 0
-        remaining = fields.get("Microsoft.VSTS.Scheduling.RemainingWork", 0) or 0
-        completed = fields.get("Microsoft.VSTS.Scheduling.CompletedWork", 0) or 0
-        allocated = original if original else remaining
+        planned, remaining, completed = _calc_hours(fields)
+        allocated = planned if planned else remaining
 
         m = team_data[matched]
         m["total_allocated_hours"] += allocated
@@ -149,9 +181,10 @@ def build_sprint_summary(ado, sprint: str) -> dict:
         f = wi["fields"]
         s = f.get("System.State", "New")
         task_states[s] = task_states.get(s, 0) + 1
-        total_original += f.get("Microsoft.VSTS.Scheduling.OriginalEstimate", 0) or 0
-        total_remaining += f.get("Microsoft.VSTS.Scheduling.RemainingWork", 0) or 0
-        total_completed += f.get("Microsoft.VSTS.Scheduling.CompletedWork", 0) or 0
+        planned, remaining, completed = _calc_hours(f)
+        total_original += planned
+        total_remaining += remaining
+        total_completed += completed
 
     total_effort = total_original if total_original else (total_remaining + total_completed)
     return {
@@ -188,13 +221,14 @@ def build_tasks_by_state(ado, sprint: str, states: list[str]) -> dict:
     items = []
     for wi in results:
         f = wi["fields"]
+        planned, remaining, completed = _calc_hours(f)
         items.append({
             "id": wi["id"],
             "title": f.get("System.Title"),
             "state": f.get("System.State"),
             "assigned_to": get_assignee(f),
-            "remaining_hours": f.get("Microsoft.VSTS.Scheduling.RemainingWork", 0) or 0,
-            "completed_hours": f.get("Microsoft.VSTS.Scheduling.CompletedWork", 0) or 0,
+            "remaining_hours": remaining,
+            "completed_hours": completed,
         })
     return {"sprint": sprint, "states": states, "count": len(items), "items": items}
 
@@ -223,10 +257,8 @@ def build_member_tasks(ado, member: str, sprint: str) -> dict:
     total_remaining = total_completed = total_allocated = 0
     for wi in tasks:
         f = wi["fields"]
-        original = f.get("Microsoft.VSTS.Scheduling.OriginalEstimate", 0) or 0
-        remaining = f.get("Microsoft.VSTS.Scheduling.RemainingWork", 0) or 0
-        completed = f.get("Microsoft.VSTS.Scheduling.CompletedWork", 0) or 0
-        allocated = original if original else remaining
+        planned, remaining, completed = _calc_hours(f)
+        allocated = planned if planned else remaining
         items.append({
             "id": wi["id"], "title": f.get("System.Title"),
             "state": f.get("System.State"),
@@ -292,10 +324,8 @@ def build_member_cross_project_tasks(ado, member: str, sprint: str) -> dict:
             return
         seen_ids.add(wi["id"])
         f = wi["fields"]
-        original = f.get("Microsoft.VSTS.Scheduling.OriginalEstimate", 0) or 0
-        remaining = f.get("Microsoft.VSTS.Scheduling.RemainingWork", 0) or 0
-        completed = f.get("Microsoft.VSTS.Scheduling.CompletedWork", 0) or 0
-        allocated = original if original else remaining
+        planned, remaining, completed = _calc_hours(f)
+        allocated = planned if planned else remaining
         items.append({
             "id": wi["id"], "title": f.get("System.Title"),
             "state": f.get("System.State"),
@@ -445,19 +475,7 @@ def _fetch_one_sprint(ado, project: str, sprint: str, lookup: dict):
             changed_by = changed_by.get("displayName", "")
 
         title = f.get("System.Title", "")
-        tfs_original = f.get("Microsoft.VSTS.Scheduling.OriginalEstimate", 0) or 0
-        tfs_completed = f.get("Microsoft.VSTS.Scheduling.CompletedWork", 0) or 0
-        remaining = f.get("Microsoft.VSTS.Scheduling.RemainingWork", 0) or 0
-
-        parsed_hours = parse_hours_from_title(title)
-        original_estimate = tfs_original if tfs_original else parsed_hours
-
-        if tfs_completed:
-            completed_work = tfs_completed
-        elif original_estimate and remaining < original_estimate:
-            completed_work = round(original_estimate - remaining, 2)
-        else:
-            completed_work = 0
+        original_estimate, remaining, completed_work = _calc_hours(f)
 
         items.append({
             "id": wi["id"],
@@ -808,11 +826,12 @@ def build_pbi_progress(ado, sprint: str) -> dict:
             if parent not in pbi_tasks:
                 pbi_tasks[parent] = []
             f = wi["fields"]
+            planned, remaining, completed = _calc_hours(f)
             pbi_tasks[parent].append({
                 "id": wi["id"], "title": f.get("System.Title"),
                 "state": f.get("System.State"),
-                "remaining": f.get("Microsoft.VSTS.Scheduling.RemainingWork", 0) or 0,
-                "completed": f.get("Microsoft.VSTS.Scheduling.CompletedWork", 0) or 0,
+                "remaining": remaining,
+                "completed": completed,
             })
 
     result = []
@@ -874,7 +893,8 @@ def build_velocity(ado, count: int = 5) -> dict:
             a_name, a_unique, a_id = get_assignee_info(f)
             matched = match_member(a_name, a_unique, a_id) if a_name else None
             if matched:
-                sprint_data[matched] += f.get("Microsoft.VSTS.Scheduling.CompletedWork", 0) or 0
+                _, _, completed = _calc_hours(f)
+                sprint_data[matched] += completed
 
         for member, hours in sprint_data.items():
             members_velocity[member]["sprints"].append({"sprint": sprint_name, "completed": hours})
@@ -974,8 +994,9 @@ def build_sprint_health(ado, sprint: str) -> dict:
             in_prog += 1
         else:
             new_count += 1
-        total_remaining += f.get("Microsoft.VSTS.Scheduling.RemainingWork", 0) or 0
-        total_completed += f.get("Microsoft.VSTS.Scheduling.CompletedWork", 0) or 0
+        planned, remaining, completed = _calc_hours(f)
+        total_remaining += remaining
+        total_completed += completed
 
         changed = f.get("System.ChangedDate", "")
         if changed and state not in ("Closed", "Done", "Resolved"):
@@ -1115,80 +1136,7 @@ def build_daily_status(ado, sprint: str) -> dict:
     )
     all_bugs = _filter_tasks_by_pbis(ado.query_work_items(bug_wiql), pbi_ids)
 
-    # ── Day Summary ──
-    pbi_completed = pbi_in_progress = pbi_not_started = 0
-    for wi in all_pbis:
-        state = wi["fields"].get("System.State", "New")
-        if state in ("Closed", "Done", "Resolved"):
-            pbi_completed += 1
-        elif state in ("Active", "In Progress"):
-            pbi_in_progress += 1
-        else:
-            pbi_not_started += 1
-
-    total_tasks = len(all_tasks)
-    tasks_done_today = 0
-    yesterday = today - timedelta(days=1)
-    if yesterday.weekday() >= 5:
-        yesterday = today - timedelta(days=(today.weekday() - 4) if today.weekday() > 0 else 3)
-
-    total_completed_hours = total_remaining_hours = total_original_hours = 0
-    for wi in all_tasks:
-        f = wi["fields"]
-        total_original_hours += f.get("Microsoft.VSTS.Scheduling.OriginalEstimate", 0) or 0
-        total_remaining_hours += f.get("Microsoft.VSTS.Scheduling.RemainingWork", 0) or 0
-        total_completed_hours += f.get("Microsoft.VSTS.Scheduling.CompletedWork", 0) or 0
-        state = f.get("System.State", "New")
-        if state in ("Closed", "Done", "Resolved"):
-            changed = f.get("System.ChangedDate", "")
-            if changed:
-                try:
-                    cd = datetime.fromisoformat(changed.replace("Z", "+00:00")).date()
-                    if cd >= yesterday:
-                        tasks_done_today += 1
-                except (ValueError, TypeError):
-                    pass
-
-    total_effort = total_original_hours if total_original_hours else (total_remaining_hours + total_completed_hours)
-    overall_progress = round((total_completed_hours / total_effort) * 100, 1) if total_effort else 0
-
-    # Blockers (tags containing "blocked" or state "Blocked")
-    blockers = 0
-    for wi in all_tasks:
-        f = wi["fields"]
-        tags = (f.get("System.Tags") or "").lower()
-        state = f.get("System.State", "")
-        if "block" in tags or state.lower() == "blocked":
-            blockers += 1
-
-    # P1 / P2 bugs
-    p1_issues = p2_issues = 0
-    for wi in all_bugs:
-        f = wi["fields"]
-        state = f.get("System.State", "New")
-        if state in ("Closed", "Done", "Resolved"):
-            continue
-        priority = f.get("Microsoft.VSTS.Common.Priority", 4)
-        if priority == 1:
-            p1_issues += 1
-        elif priority == 2:
-            p2_issues += 1
-
-    day_summary = {
-        "total_pbis": len(all_pbis),
-        "pbis_completed": pbi_completed,
-        "pbis_in_progress": pbi_in_progress,
-        "pbis_not_started": pbi_not_started,
-        "total_tasks": total_tasks,
-        "tasks_done_today": tasks_done_today,
-        "overall_progress": f"{overall_progress}%",
-        "blockers": blockers,
-        "p1_issues": p1_issues,
-        "p2_issues": p2_issues,
-    }
-
-    # ── PBI Status Update ──
-    # Build task mapping per PBI
+    # ── Build task mapping per PBI (needed for both summary and PBI status) ──
     pbi_tasks = {}
     for wi in all_tasks:
         parent = get_parent_id(wi)
@@ -1202,6 +1150,90 @@ def build_daily_status(ado, sprint: str) -> dict:
                 "assigned_to": get_assignee(f),
             })
 
+    # ── Day Summary ──
+    # PBI status derived from child tasks, not TFS PBI state
+    pbi_completed = pbi_in_progress = pbi_not_started = 0
+    for wi in all_pbis:
+        pid = wi["id"]
+        children = pbi_tasks.get(pid, [])
+        total_t = len(children)
+        done_t = sum(1 for t in children if t["state"] in ("Closed", "Done", "Resolved"))
+        in_prog_t = sum(1 for t in children if t["state"] in ("Active", "In Progress"))
+
+        if total_t > 0 and done_t == total_t:
+            pbi_completed += 1
+        elif in_prog_t > 0 or done_t > 0:
+            pbi_in_progress += 1
+        else:
+            pbi_not_started += 1
+
+    total_tasks = len(all_tasks)
+    tasks_closed_today = 0
+    total_tasks_closed = 0
+
+    total_completed_hours = total_remaining_hours = total_original_hours = 0
+    blockers = 0
+    for wi in all_tasks:
+        f = wi["fields"]
+        planned, remaining, completed = _calc_hours(f)
+        total_original_hours += planned
+        total_remaining_hours += remaining
+        total_completed_hours += completed
+        state = f.get("System.State", "New")
+        tags = (f.get("System.Tags") or "").lower()
+        if state in ("Closed", "Done", "Resolved"):
+            total_tasks_closed += 1
+            changed = f.get("System.ChangedDate", "")
+            if changed:
+                try:
+                    cd = datetime.fromisoformat(changed.replace("Z", "+00:00")).date()
+                    if cd == today:
+                        tasks_closed_today += 1
+                except (ValueError, TypeError):
+                    pass
+        if "block" in tags or state.lower() == "blocked":
+            blockers += 1
+
+    # Sprint progress: done tasks / total tasks
+    overall_progress = round((total_tasks_closed / total_tasks) * 100, 1) if total_tasks else 0
+
+    # P1 / P2: count open bugs by priority AND collect member names
+    p1_issues = p2_issues = 0
+    p1_members = []
+    p2_members = []
+    for wi in all_bugs:
+        f = wi["fields"]
+        state = f.get("System.State", "New")
+        if state in ("Closed", "Done", "Resolved"):
+            continue
+        priority = f.get("Microsoft.VSTS.Common.Priority", 4)
+        assignee = get_assignee(f)
+        if priority == 1:
+            p1_issues += 1
+            if assignee and assignee not in p1_members:
+                p1_members.append(assignee)
+        elif priority == 2:
+            p2_issues += 1
+            if assignee and assignee not in p2_members:
+                p2_members.append(assignee)
+
+    day_summary = {
+        "total_pbis": len(all_pbis),
+        "pbis_completed": pbi_completed,
+        "pbis_in_progress": pbi_in_progress,
+        "pbis_not_started": pbi_not_started,
+        "total_tasks": total_tasks,
+        "tasks_closed_today": tasks_closed_today,
+        "total_tasks_closed": total_tasks_closed,
+        "overall_progress": f"{overall_progress}%",
+        "blockers": blockers,
+        "p1_issues": p1_issues,
+        "p1_members": p1_members,
+        "p2_issues": p2_issues,
+        "p2_members": p2_members,
+    }
+
+    # ── PBI Status Update ──
     pbi_status = []
     for wi in all_pbis:
         f = wi["fields"]
@@ -1209,86 +1241,27 @@ def build_daily_status(ado, sprint: str) -> dict:
         children = pbi_tasks.get(pid, [])
         total_t = len(children)
         done_t = sum(1 for t in children if t["state"] in ("Closed", "Done", "Resolved"))
-        state = f.get("System.State", "New")
+        in_prog_t = sum(1 for t in children if t["state"] in ("Active", "In Progress"))
 
-        # Determine status color
-        if state in ("Closed", "Done", "Resolved"):
+        # Determine status from task states, not PBI state
+        if total_t > 0 and done_t == total_t:
+            status = "Completed"
             status_color = "green"
-        elif done_t > 0:
+        elif in_prog_t > 0 or done_t > 0:
+            status = "In Progress"
             status_color = "yellow"
         else:
+            status = "Not Started"
             status_color = "blue"
 
         pbi_status.append({
             "id": pid,
             "title": f.get("System.Title", ""),
             "tasks_done": f"{done_t} / {total_t}",
-            "status": state,
+            "status": status,
             "status_color": status_color,
             "eta": "",
         })
-
-    # ── Testing Status ──
-    testing_status = []
-    for wi in all_pbis:
-        f = wi["fields"]
-        pid = wi["id"]
-        # Count bugs linked to this PBI area
-        pbi_p1 = pbi_p2 = 0
-        tested = 0
-        for bug in all_bugs:
-            bf = bug["fields"]
-            bug_parent = get_parent_id(bug)
-            if bug_parent == pid:
-                bp = bf.get("Microsoft.VSTS.Common.Priority", 4)
-                if bp == 1:
-                    pbi_p1 += 1
-                elif bp == 2:
-                    pbi_p2 += 1
-                tested += 1
-        testing_status.append({
-            "id": pid,
-            "scenarios_tested": tested,
-            "p1_issues": pbi_p1,
-            "p2_issues": pbi_p2,
-            "remarks": "",
-        })
-
-    # ── Blockers & Risks ──
-    blockers_list = []
-    for wi in all_tasks + all_bugs:
-        f = wi["fields"]
-        tags = (f.get("System.Tags") or "").lower()
-        state = f.get("System.State", "")
-        if "block" in tags or state.lower() == "blocked":
-            parent = get_parent_id(wi)
-            blockers_list.append({
-                "pbi_id": parent or wi["id"],
-                "description": f.get("System.Title", ""),
-                "raised_by": get_assignee(f),
-                "action_owner": "",
-                "eta_resolve": "",
-            })
-
-    # ── Plan for Tomorrow ──
-    plan_tomorrow = []
-    for wi in all_tasks:
-        f = wi["fields"]
-        state = f.get("System.State", "New")
-        if state in ("Active", "In Progress", "New"):
-            remaining = f.get("Microsoft.VSTS.Scheduling.RemainingWork", 0) or 0
-            if remaining > 0 or state == "New":
-                parent = get_parent_id(wi)
-                priority = f.get("Microsoft.VSTS.Common.Priority", 4)
-                plan_tomorrow.append({
-                    "pbi_id": parent or "",
-                    "task": f.get("System.Title", ""),
-                    "owner": get_assignee(f),
-                    "priority": priority,
-                    "notes": "",
-                })
-    # Sort by priority
-    plan_tomorrow.sort(key=lambda x: x["priority"])
 
     return {
         "sprint_number": sprint_number,
@@ -1296,9 +1269,6 @@ def build_daily_status(ado, sprint: str) -> dict:
         "date": today_str,
         "day_summary": day_summary,
         "pbi_status": pbi_status,
-        "testing_status": testing_status,
-        "blockers": blockers_list,
-        "plan_tomorrow": plan_tomorrow,
     }
 
 
@@ -1362,9 +1332,7 @@ def build_dashboard(ado, sprint: str) -> dict:
         state = f.get("System.State", "New")
         task_states[state] = task_states.get(state, 0) + 1
 
-        original = f.get("Microsoft.VSTS.Scheduling.OriginalEstimate", 0) or 0
-        remaining = f.get("Microsoft.VSTS.Scheduling.RemainingWork", 0) or 0
-        completed = f.get("Microsoft.VSTS.Scheduling.CompletedWork", 0) or 0
+        original, remaining, completed = _calc_hours(f)
         allocated = original if original else remaining
         total_original += original
         total_remaining += remaining

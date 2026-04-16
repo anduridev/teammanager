@@ -32,7 +32,12 @@
       "Bash(python -c \"import ast; ast.parse\\(open\\('app.py', encoding='utf-8'\\).read\\(\\)\\); print\\('app.py: OK'\\)\")",
       "Bash(python -c \"import ast; ast.parse\\(open\\('auth.py', encoding='utf-8'\\).read\\(\\)\\); print\\('auth.py: OK'\\)\")",
       "Bash(python -c \"import ast; ast.parse\\(open\\('config.py', encoding='utf-8'\\).read\\(\\)\\); print\\('config.py: OK'\\)\")",
-      "Bash(curl -s -b \"session=test\" http://localhost:5000/admin)"
+      "Bash(curl -s -b \"session=test\" http://localhost:5000/admin)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('analytics.py', encoding='utf-8'\\).read\\(\\)\\); print\\('OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('analytics.py', encoding='utf-8'\\).read\\(\\)\\); ast.parse\\(open\\('helpers.py', encoding='utf-8'\\).read\\(\\)\\); print\\('OK'\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(python)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('analytics.py', encoding='utf-8'\\).read\\(\\)\\); ast.parse\\(open\\('app.py', encoding='utf-8'\\).read\\(\\)\\); print\\('OK'\\)\")"
     ]
   }
 }

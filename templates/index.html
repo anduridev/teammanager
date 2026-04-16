@@ -887,19 +887,21 @@ function renderDashboard(){
         </div>
     </div>`;
 
-    // ── 3. Top Loaded Members ──
-    const loaded=[...D.members].filter(m=>m.task_count>0).sort((a,b)=>b.remaining_hours-a.remaining_hours).slice(0,3);
-    if(loaded.length){
-        h+=`<div class="section"><div class="section-head"><h3>Top Loaded</h3></div>`;
-        h+=`<div style="display:flex;gap:10px;flex-wrap:wrap">`;
-        for(let i=0;i<loaded.length;i++){
-            const m=loaded[i];
-            const colors=['var(--red)','var(--orange)','var(--accent)'];
-            const bgs=['var(--red-l)','#fffbeb','var(--accent-l)'];
-            h+=`<div style="flex:1;min-width:150px;background:${bgs[i]};border:1px solid var(--border);border-radius:10px;padding:12px 14px;box-shadow:var(--shadow)">
-                <div style="font-size:12px;font-weight:600;margin-bottom:4px">${esc(m.member)}</div>
-                <div style="font-size:20px;font-weight:700;color:${colors[i]}">${m.remaining_hours}h</div>
-                <div style="font-size:10px;color:var(--muted)">${m.task_count} tasks · ${m.in_progress_count} active</div>
+    // ── 3. Team Alerts ──
+    const noTasks0=D.members.filter(m=>m.task_count===0);
+    const noProgress0=D.members.filter(m=>m.task_count>0&&m.in_progress_count===0);
+    if(noTasks0.length||noProgress0.length){
+        h+=`<div class="section"><div class="section-head"><h3>Team Alerts</h3><span class="count" style="color:var(--orange)">${noTasks0.length+noProgress0.length}</span></div><div style="display:flex;flex-wrap:wrap;gap:8px">`;
+        for(const m of noTasks0){
+            h+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:8px">
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--muted)"></div>
+                <div><div style="font-size:12px;font-weight:500">${esc(m.member)}</div><div style="font-size:10px;color:var(--muted)">No tasks assigned</div></div>
+            </div>`;
+        }
+        for(const m of noProgress0){
+            h+=`<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:8px">
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--orange)"></div>
+                <div><div style="font-size:12px;font-weight:500">${esc(m.member)}</div><div style="font-size:10px;color:var(--orange)">No task in progress (${m.task_count} tasks, all ${m.new_count>0?'To Do':'Done'})</div></div>
             </div>`;
         }
         h+=`</div></div>`;
@@ -1014,26 +1016,6 @@ function renderDashboard(){
         }
     }
     h+=`</tbody></table></div></div>`;
-
-    // ── Team Alerts ──
-    const noTasks=D.members.filter(m=>m.task_count===0);
-    const noProgress=D.members.filter(m=>m.task_count>0&&m.in_progress_count===0);
-    if(noTasks.length||noProgress.length){
-        h+=`<div class="section"><div class="section-head"><h3>Team Alerts</h3></div><div style="display:flex;flex-wrap:wrap;gap:8px">`;
-        for(const m of noTasks){
-            h+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:8px">
-                <div style="width:8px;height:8px;border-radius:50%;background:var(--muted)"></div>
-                <div><div style="font-size:12px;font-weight:500">${esc(m.member)}</div><div style="font-size:10px;color:var(--muted)">No tasks assigned</div></div>
-            </div>`;
-        }
-        for(const m of noProgress){
-            h+=`<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:8px">
-                <div style="width:8px;height:8px;border-radius:50%;background:var(--orange)"></div>
-                <div><div style="font-size:12px;font-weight:500">${esc(m.member)}</div><div style="font-size:10px;color:var(--orange)">No task in progress (${m.task_count} tasks, all ${m.new_count>0?'To Do':'Done'})</div></div>
-            </div>`;
-        }
-        h+=`</div></div>`;
-    }
 
     // ── TFS Not Updated ──
     const sprintDay=di0.current_day||di0.elapsed_days||1;

@@ -1,0 +1,451 @@
+{
+  "Sprint 80": {
+    "15-Apr-2026 (Wednesday)": {
+      "closed_today": [
+        {
+          "assigned_to": "Kundan Kolla",
+          "hours": 3,
+          "id": 395732,
+          "parent_id": 395649,
+          "title": "V-002 — Hardcoded Fixer.io API Key    create  test cases  for  v1/admin/fiat/deposit/state  -- wallets controlller   -3 hrs"
+        },
+        {
+          "assigned_to": "Anduri Sowjanya",
+          "hours": 1,
+          "id": 395775,
+          "parent_id": 395650,
+          "title": "Payments-Sql Injection for payments Auditlog insertion call  testing -1hrs"
+        },
+        {
+          "assigned_to": "Kundan Kolla",
+          "hours": 3,
+          "id": 395898,
+          "parent_id": 395659,
+          "title": " V-012 — core .Api Permissive CORS Policy (AllowAnyOrigin) -3  hrs"
+        },
+        {
+          "assigned_to": "Anduri Sowjanya",
+          "hours": 2,
+          "id": 395922,
+          "parent_id": 395851,
+          "title": "API-Payments-Rotate Noah EC private key immediately + store in Azure Key Vault -2hrs"
+        },
+        {
+          "assigned_to": "Raju Kallubandi",
+          "hours": 2,
+          "id": 395947,
+          "parent_id": 395650,
+          "title": "Core-Sql Injection for Core Apis-2hrs"
+        },
+        {
+          "assigned_to": "Anduri Sowjanya",
+          "hours": 1,
+          "id": 396002,
+          "parent_id": 395851,
+          "title": "API-Payments -No State Machine Transition Validation-1hr"
+        },
+        {
+          "assigned_to": "Kundan Kolla",
+          "hours": 2,
+          "id": 396020,
+          "parent_id": 395981,
+          "title": " VULN-04 — AES Encryption with Fixed Zero IV (Token Forgery)  ● CRITICAL  -2  hr"
+        },
+        {
+          "assigned_to": "Anusha Annabattuni",
+          "hours": 2,
+          "id": 396021,
+          "parent_id": 395851,
+          "title": "API-CRIT-06-Audit Trail Spoofing via User-Controlled CreatedBy/ModifiedBy - 2 hrs."
+        },
+        {
+          "assigned_to": "SriLakshmiA",
+          "hours": 2,
+          "id": 396024,
+          "parent_id": 395981,
+          "title": "VULN-11 — Rate Limiter Bypassed via Malformed Tokens  -2hr"
+        },
+        {
+          "assigned_to": "SriLakshmiA",
+          "hours": 3,
+          "id": 396030,
+          "parent_id": 395981,
+          "title": "VULN-08 — RequireHttpsMetadata = false in All Environments - 3hr"
+        },
+        {
+          "assigned_to": "Perusomula Meghana",
+          "hours": 2,
+          "id": 396035,
+          "parent_id": 395981,
+          "title": "API - VULN-04 — AES Encryption with Fixed Zero IV (Token Forgery) -2hr"
+        },
+        {
+          "assigned_to": "Venigandla Narendra",
+          "hours": 1,
+          "id": 396065,
+          "parent_id": 396059,
+          "title": "API-V-008 — JWT Parsed Without Validation-1hrs"
+        },
+        {
+          "assigned_to": "Sowmya Sri",
+          "hours": 1,
+          "id": 396068,
+          "parent_id": 396059,
+          "title": "HIGH -IDOR — No Resource Ownership Validation (WalletsController) - 1 hrs"
+        },
+        {
+          "assigned_to": "Venigandla Narendra",
+          "hours": 0.45,
+          "id": 396069,
+          "parent_id": 396059,
+          "title": "API-H7. Silent Audit Log Failures (CWE-778) -0.45hrs"
+        },
+        {
+          "assigned_to": "Venigandla Narendra",
+          "hours": 0.45,
+          "id": 396072,
+          "parent_id": 396059,
+          "title": "API-H3. Race Conditions in Transaction Processing (CWE-362) -0.45hrs"
+        },
+        {
+          "assigned_to": "Raju Kallubandi",
+          "hours": 1,
+          "id": 396075,
+          "parent_id": 396059,
+          "title": "API-HIGH -IDOR — No Resource Ownership Validation (WalletsController) -1hrs"
+        },
+        {
+          "assigned_to": "Venigandla Narendra",
+          "hours": 0.45,
+          "id": 396076,
+          "parent_id": 396059,
+          "title": "API- Audience Validation Disabled for IdentityServer (CWE-287)-0.45hrs"
+        },
+        {
+          "assigned_to": "Venigandla Narendra",
+          "hours": 0.45,
+          "id": 396077,
+          "parent_id": 396059,
+          "title": "API-High - Missing Security Response Headers (CWE-693)-0.45hrs"
+        },
+        {
+          "assigned_to": "Sowmya Sri",
+          "hours": 1,
+          "id": 396078,
+          "parent_id": 396059,
+          "title": " Audience Validation Disabled for IdentityServer (CWE-287)  - 1 hr"
+        },
+        {
+          "assigned_to": "Anusha Annabattuni",
+          "hours": 1.5,
+          "id": 396093,
+          "parent_id": 395851,
+          "title": "API-Payments Event Jobs-Fix Azure Functions local startup failure - 1.5hrs."
+        },
+        {
+          "assigned_to": "Perusomula Meghana",
+          "hours": 1,
+          "id": 396105,
+          "parent_id": 395981,
+          "title": "API- VULN-12 — Missing Idempotency Enforcement in Service Layer-1hr"
+        },
+        {
+          "assigned_to": "Kundan Kolla",
+          "hours": 3,
+          "id": 396126,
+          "parent_id": 394935,
+          "title": "smash pay -mobile  app  upgrade issue in android and  need to  check  in  ios -  3 hrs"
+        },
+        {
+          "assigned_to": "Anusha Annabattuni",
+          "hours": 1,
+          "id": 396162,
+          "parent_id": 395851,
+          "title": "API-Payments-JWT Signature Validation Bypass – Critical Token Forgery Vulnerability Fix - 1 hr."
+        },
+        {
+          "assigned_to": "Sowmya Sri",
+          "hours": 1.5,
+          "id": 396193,
+          "parent_id": 396059,
+          "title": "High - H7. Silent Audit Log Failures (CWE-778)  - 1.5 hr"
+        },
+        {
+          "assigned_to": "Venigandla Narendra",
+          "hours": 0.45,
+          "id": 396296,
+          "parent_id": 396059,
+          "title": "API-Unauthenticated Tenant Management Endpoints (CWE-306)-0.45hrs"
+        }
+      ],
+      "date": "15-Apr-2026 (Wednesday)",
+      "day_summary": {
+        "blockers": 0,
+        "overall_progress": "62.5%",
+        "p1_issues": 0,
+        "p1_members": [],
+        "p2_issues": 0,
+        "p2_members": [],
+        "pbis_completed": 17,
+        "pbis_in_progress": 0,
+        "pbis_not_started": 14,
+        "tasks_done_today": 74,
+        "total_pbis": 31,
+        "total_tasks": 144
+      },
+      "pbi_status": [
+        {
+          "eta": "",
+          "id": 394935,
+          "status": "New",
+          "status_color": "yellow",
+          "tasks_done": "1 / 2",
+          "title": "WEP- Mobile- Convert to Common components"
+        },
+        {
+          "eta": "",
+          "id": 395647,
+          "status": "Approved",
+          "status_color": "blue",
+          "tasks_done": "0 / 3",
+          "title": "WEP - Sponcer gas implementation and wallets under one name (in View)"
+        },
+        {
+          "eta": "",
+          "id": 395648,
+          "status": "Done",
+          "status_color": "green",
+          "tasks_done": "7 / 7",
+          "title": "WEP - V-001 — Hardcoded HMAC Secret Key File: Utils/HmacAuthHandler.cs"
+        },
+        {
+          "eta": "",
+          "id": 395649,
+          "status": "Done",
+          "status_color": "green",
+          "tasks_done": "8 / 8",
+          "title": "WEP - V-002 — Hardcoded Fixer.io API Key"
+        },
+        {
+          "eta": "",
+          "id": 395650,
+          "status": "Approved",
+          "status_color": "yellow",
+          "tasks_done": "5 / 5",
+          "title": "WEP - V-003 — SQL Injection via String Concatenation (Multiple Locations)"
+        },
+        {
+          "eta": "",
+          "id": 395651,
+          "status": "Done",
+          "status_color": "green",
+          "tasks_done": "2 / 2",
+          "title": "WEP - V-004 — SQL Injection in Web3 Callback Endpoint"
+        },
+        {
+          "eta": "",
+          "id": 395652,
+          "status": "Done",
+          "status_color": "green",
+          "tasks_done": "2 / 2",
+          "title": "WEP - V-005 — Missing Webhook Signature Verification"
+        },
+        {
+          "eta": "",
+          "id": 395653,
+          "status": "Done",
+          "status_color": "green",
+          "tasks_done": "2 / 2",
+          "title": "WEP - V-006 — Unauthenticated Transaction Replay"
+        },
+        {
+          "eta": "",
+          "id": 395654,
+          "status": "Done",
+          "status_color": "green",
+          "tasks_done": "7 / 7",
+          "title": "WEP - V-007 — In-Memory Nonce Store (Replay Risk)"
+        },
+        {
+          "eta": "",
+          "id": 395655,
+          "status": "Done",
+          "status_color": "green",
+          "tasks_done": "3 / 3",
+          "title": "WEP - V-008 — JWT Parsed Without Validation"
+        },
+        {
+          "eta": "",
+          "id": 395656,
+          "status": "Done",
+          "status_color": "green",
+          "tasks_done": "5 / 5",
+          "title": "WEP - V-009 — Missing Authorization on Controllers"
+        },
+        {
+          "eta": "",
+          "id": 395657,
+          "status": "Done",
+          "status_color": "green",
+          "tasks_done": "2 / 3",
+          "title": "WEP - V-010 — Unauthenticated Customer Data Endpoint"
+        },
+        {
+          "eta": "",
+          "id": 395658,
+          "status": "Done",
+          "status_color": "green",
+          "tasks_done": "2 / 2",
+          "title": "WEP - V-011 — Unauthenticated Pending Transaction Processing"
+        },
+        {
+          "eta": "",
+          "id": 395659,
+          "status": "Done",
+          "status_color": "green",
+          "tasks_done": "5 / 5",
+          "title": "WEP - V-012 — Permissive CORS Policy (AllowAnyOrigin)"
+        },
+        {
+          "eta": "",
+          "id": 395660,
+          "status": "Done",
+          "status_color": "green",
+          "tasks_done": "2 / 2",
+          "title": "WEP - V-013 — SQL Injection in Audit Logging Utilities"
+        },
+        {
+          "eta": "",
+          "id": 395661,
+          "status": "Done",
+          "status_color": "green",
+          "tasks_done": "1 / 1",
+          "title": "WEP - V-014 — SQL Injection in Permission Authorization (Critical)"
+        },
+        {
+          "eta": "",
+          "id": 395662,
+          "status": "Done",
+          "status_color": "green",
+          "tasks_done": "1 / 1",
+          "title": "WEP - V-015 — Insecure Inabit Callback Approval"
+        },
+        {
+          "eta": "",
+          "id": 395663,
+          "status": "Done",
+          "status_color": "green",
+          "tasks_done": "3 / 3",
+          "title": "WEP - V-016 — SSRF via DFNS Callback Forwarding"
+        },
+        {
+          "eta": "",
+          "id": 395672,
+          "status": "Approved",
+          "status_color": "blue",
+          "tasks_done": "0 / 11",
+          "title": "WEP - Borderless POC and  Implementation"
+        },
+        {
+          "eta": "",
+          "id": 395673,
+          "status": "Approved",
+          "status_color": "blue",
+          "tasks_done": "0 / 2",
+          "title": "WEP - Noah Live"
+        },
+        {
+          "eta": "",
+          "id": 395674,
+          "status": "Approved",
+          "status_color": "blue",
+          "tasks_done": "0 / 5",
+          "title": "WEP - Unlimit Ready to Live and Demo to Client"
+        },
+        {
+          "eta": "",
+          "id": 395675,
+          "status": "Approved",
+          "status_color": "blue",
+          "tasks_done": "0 / 6",
+          "title": "WEP - Performance Measurement "
+        },
+        {
+          "eta": "",
+          "id": 395676,
+          "status": "Approved",
+          "status_color": "blue",
+          "tasks_done": "0 / 0",
+          "title": "WEP - Find Out Performance Pain Points Across All Modules (AI-Assisted)"
+        },
+        {
+          "eta": "",
+          "id": 395677,
+          "status": "Approved",
+          "status_color": "blue",
+          "tasks_done": "0 / 1",
+          "title": "WEP - Infra Follow-Up — RAM / Compute Root Cause for App Slowness"
+        },
+        {
+          "eta": "",
+          "id": 395744,
+          "status": "Done",
+          "status_color": "green",
+          "tasks_done": "1 / 1",
+          "title": "WEP - VAPT Reports Generation "
+        },
+        {
+          "eta": "",
+          "id": 395760,
+          "status": "Approved",
+          "status_color": "blue",
+          "tasks_done": "0 / 0",
+          "title": "WEP - Reconciliation API Integration "
+        },
+        {
+          "eta": "",
+          "id": 395851,
+          "status": "Done",
+          "status_color": "green",
+          "tasks_done": "14 / 14",
+          "title": "WEP - Payements--VAPT Security Implementation"
+        },
+        {
+          "eta": "",
+          "id": 395981,
+          "status": "Approved",
+          "status_color": "yellow",
+          "tasks_done": "7 / 12",
+          "title": "WEP - Exchange - VAPT "
+        },
+        {
+          "eta": "",
+          "id": 396059,
+          "status": "Approved",
+          "status_color": "yellow",
+          "tasks_done": "10 / 16",
+          "title": "WEP - Core - VAPT"
+        },
+        {
+          "eta": "",
+          "id": 396113,
+          "status": "Approved",
+          "status_color": "blue",
+          "tasks_done": "0 / 5",
+          "title": "WEP - VAPT - Arthamoney Testing"
+        },
+        {
+          "eta": "",
+          "id": 396268,
+          "status": "Approved",
+          "status_color": "blue",
+          "tasks_done": "0 / 8",
+          "title": "WEP - Naramax Changes"
+        }
+      ],
+      "sprint_name": "Sprint 80",
+      "sprint_number": "80",
+      "saved_by": "subbareddy"
+    }
+  }
+}

@@ -12,11 +12,19 @@ from config import TEAM_FILE, HOURS_PER_DAY
 
 
 def parse_hours_from_title(title: str) -> float:
-    """Parse planned hours from task title pattern like 'Task name -3hrs'."""
+    """Parse planned hours from task title.
+    Matches patterns like: '- 3hrs', '-3 hr.', '- 1.5hrs.', '8 hrs.', '(3 hrs)', '2 hr'.
+    Looks for the LAST number+hour pattern in the title to avoid matching IDs.
+    """
     if not title:
         return 0
-    m = re.search(r'-\s*(\d+(?:\.\d+)?)\s*h(?:rs?)?(?:\s|$)', title, re.IGNORECASE)
-    return float(m.group(1)) if m else 0
+    # Find all occurrences of number followed by h/hr/hrs/hours, with optional trailing period
+    matches = re.findall(
+        r'(\d+(?:\.\d+)?)\s*h(?:(?:ou)?rs?)?\.?(?:\s|$|[)\]])',
+        title, re.IGNORECASE,
+    )
+    # Return the last match (hours are typically at the end of the title)
+    return float(matches[-1]) if matches else 0
 
 
 # ── Team Data ──

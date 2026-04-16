@@ -190,6 +190,92 @@ def api_daily_status():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/daily-status/save", methods=["POST"])
+@login_required
+def api_daily_status_save():
+    """Save a daily status report snapshot."""
+    import json as _json
+    from config import DAILY_STATUS_FILE
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Invalid JSON"}), 400
+    report = data.get("report", {})
+    sprint = report.get("sprint_name", "")
+    report_date = report.get("date", "")
+    if not sprint or not report_date:
+        return jsonify({"error": "Missing sprint or date"}), 400
+
+    # Load existing history
+    history = {}
+    if os.path.exists(DAILY_STATUS_FILE):
+        try:
+            with open(DAILY_STATUS_FILE, "r", encoding="utf-8") as f:
+                history = _json.load(f)
+        except Exception:
+            history = {}
+
+    # Key by sprint → date
+    if sprint not in history:
+        history[sprint] = {}
+    user = get_current_user()
+    report["saved_by"] = user.get("displayName", "") if user else ""
+    history[sprint][report_date] = report
+
+    with open(DAILY_STATUS_FILE, "w", encoding="utf-8") as f:
+        _json.dump(history, f, indent=2, ensure_ascii=False)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/daily-status/history")
+@login_required
+def api_daily_status_history():
+    """List saved reports for a sprint."""
+    import json as _json
+    from config import DAILY_STATUS_FILE
+    sprint = request.args.get("sprint", "")
+    if not os.path.exists(DAILY_STATUS_FILE):
+        return jsonify({"reports": []})
+    try:
+        with open(DAILY_STATUS_FILE, "r", encoding="utf-8") as f:
+            history = _json.load(f)
+    except Exception:
+        return jsonify({"reports": []})
+
+    if sprint:
+        entries = history.get(sprint, {})
+        reports = [{"date": d, "sprint": sprint} for d in sorted(entries.keys(), reverse=True)]
+    else:
+        reports = []
+        for sp, dates in history.items():
+            for d in dates:
+                reports.append({"date": d, "sprint": sp})
+        reports.sort(key=lambda x: x["date"], reverse=True)
+    return jsonify({"reports": reports})
+
+
+@app.route("/api/daily-status/load")
+@login_required
+def api_daily_status_load():
+    """Load a saved report by sprint + date."""
+    import json as _json
+    from config import DAILY_STATUS_FILE
+    sprint = request.args.get("sprint", "")
+    report_date = request.args.get("date", "")
+    if not sprint or not report_date:
+        return jsonify({"error": "sprint and date required"}), 400
+    if not os.path.exists(DAILY_STATUS_FILE):
+        return jsonify({"error": "No saved reports"}), 404
+    try:
+        with open(DAILY_STATUS_FILE, "r", encoding="utf-8") as f:
+            history = _json.load(f)
+        report = history.get(sprint, {}).get(report_date)
+        if not report:
+            return jsonify({"error": "Report not found"}), 404
+        return jsonify(report)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # ══════════════════════════════════════════════════════════════════════
 #  API — Admin (superadmin only)
 # ══════════════════════════════════════════════════════════════════════

@@ -14,89 +14,82 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .header-left{display:flex;align-items:center;gap:14px}
 .logo{width:30px;height:30px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;color:#fff}
 .header h1{font-size:14px;font-weight:600;letter-spacing:-.2px}
-.header-right{display:flex;align-items:center;gap:10px}
 .back-link{font-size:12px;color:var(--accent);text-decoration:none;font-weight:500;display:flex;align-items:center;gap:4px}
 .back-link:hover{text-decoration:underline}
 
 .container{max-width:960px;margin:0 auto;padding:24px 20px 60px}
 
-/* Action bar */
-.action-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:12px;flex-wrap:wrap}
+.action-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px;flex-wrap:wrap}
 .action-bar-left{display:flex;align-items:center;gap:10px}
-.sprint-select{font-size:12px;font-family:inherit;border:1px solid var(--border);border-radius:7px;padding:7px 12px;background:var(--white);outline:none;cursor:pointer;color:var(--text)}
-.sprint-select:focus{border-color:var(--accent)}
+.sprint-select,.history-select{font-size:12px;font-family:inherit;border:1px solid var(--border);border-radius:7px;padding:7px 12px;background:var(--white);outline:none;cursor:pointer;color:var(--text)}
+.sprint-select:focus,.history-select:focus{border-color:var(--accent)}
 .btn{padding:8px 18px;border-radius:8px;font-size:12.5px;font-weight:500;font-family:inherit;cursor:pointer;border:none;transition:all .15s}
 .btn-primary{background:var(--accent);color:#fff}
 .btn-primary:hover{background:var(--accent-h)}
 .btn-primary:disabled{background:#93c5fd;cursor:not-allowed}
 .btn-outline{background:var(--white);color:var(--sec);border:1px solid var(--border)}
 .btn-outline:hover{background:var(--bg);color:var(--text)}
+.btn-green{background:var(--green);color:#fff}
+.btn-green:hover{background:#047857}
+.btn-sm{padding:6px 12px;font-size:11px}
 
-/* Report container */
+.history-bar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.history-bar label{font-size:12px;font-weight:600;color:var(--sec)}
+.saved-msg{font-size:11px;color:var(--green);font-weight:500;opacity:0;transition:opacity .3s}
+.saved-msg.show{opacity:1}
+
 .report{background:var(--white);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);overflow:hidden}
-
-/* Report title banner */
 .report-banner{background:var(--navy);color:#fff;padding:14px 24px;text-align:center}
 .report-banner h2{font-size:15px;font-weight:700;letter-spacing:.3px}
 .report-meta{display:flex;justify-content:space-between;align-items:center;padding:10px 24px;background:#eef1f5;border-bottom:1px solid var(--border);font-size:12px;font-weight:500;color:var(--navy)}
 .report-meta span{display:flex;align-items:center;gap:6px}
 .meta-label{font-weight:700}
 
-/* Section headers */
 .section-header{background:var(--navy);color:#fff;padding:8px 18px;font-size:12px;font-weight:700;letter-spacing:.3px;display:flex;align-items:center;gap:8px;border-top:2px solid var(--navy-dark)}
 .section-icon{width:18px;height:18px;background:rgba(255,255,255,.2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px}
 
-/* Tables */
 .report-table{width:100%;border-collapse:collapse;font-size:12px}
 .report-table thead th{background:var(--navy);color:#fff;padding:8px 14px;text-align:left;font-weight:600;font-size:11px;letter-spacing:.3px;white-space:nowrap}
 .report-table tbody td{padding:8px 14px;border-bottom:1px solid #eef0f2;vertical-align:middle}
 .report-table tbody tr:hover{background:#fafbfc}
 .report-table tbody tr:last-child td{border-bottom:none}
 
-/* Summary table (key-value) */
 .summary-table{width:100%;border-collapse:collapse;font-size:12px}
 .summary-table td{padding:7px 14px;border-bottom:1px solid #eef0f2}
 .summary-table .metric{font-weight:600;color:var(--navy);width:220px;background:#f8f9fb}
 .summary-table .value{color:var(--text);font-weight:500}
 
-/* Status badges */
 .status-badge{display:inline-block;padding:3px 10px;border-radius:4px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
 .status-green{background:#d1fae5;color:#065f46}
 .status-yellow{background:#fef3c7;color:#92400e}
 .status-blue{background:#dbeafe;color:#1e40af}
-.status-red{background:#fee2e2;color:#991b1b}
 
-/* Priority badges */
-.priority-badge{display:inline-block;width:22px;height:22px;border-radius:50%;font-size:10px;font-weight:700;text-align:center;line-height:22px;color:#fff}
-.priority-1{background:var(--red)}.priority-2{background:var(--orange)}.priority-3{background:var(--accent)}.priority-4{background:var(--muted)}
-
-/* Issue dots */
-.issue-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
-.dot-red{background:var(--red)}.dot-yellow{background:var(--orange)}.dot-green{background:var(--green)}
-
-/* Editable cells */
 .editable{position:relative;min-height:20px;cursor:text;border-radius:3px;padding:2px 4px;transition:background .15s}
 .editable:hover{background:#f0f1f3}
 .editable:focus{outline:2px solid var(--accent);outline-offset:-1px;background:var(--white)}
 
-/* Empty state */
 .empty-row td{text-align:center;color:var(--muted);padding:20px 14px;font-style:italic}
 
-/* Loading */
 .loading-overlay{display:flex;align-items:center;justify-content:center;padding:60px 20px;color:var(--muted);font-size:13px;gap:10px}
 .spinner{width:18px;height:18px;border:2px solid #e5e7eb;border-top:2px solid var(--accent);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* Copy/Export buttons */
-.export-bar{display:flex;gap:8px;align-items:center}
+/* Comparison */
+.cmp-up{color:var(--green);font-weight:600}.cmp-down{color:var(--red);font-weight:600}.cmp-same{color:var(--muted)}
+.cmp-val{font-size:10px;margin-left:4px}
 
-/* Responsive */
 @media(max-width:768px){
     .container{padding:16px 10px 40px}
     .report-meta{flex-direction:column;gap:6px;align-items:flex-start}
     .action-bar{flex-direction:column;align-items:stretch}
     .report-table,.summary-table{font-size:11px}
     .report-table thead th,.report-table tbody td,.summary-table td{padding:6px 8px}
+}
+@media print{
+    .header,.action-bar,.history-bar{display:none!important}
+    .container{padding:0;max-width:100%}
+    .report{border:none;box-shadow:none;border-radius:0}
+    body{background:#fff}
 }
 </style>
 </head>
@@ -107,9 +100,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
         <div class="logo">AD</div>
         <h1>Daily Sprint Status Email</h1>
     </div>
-    <div class="header-right">
-        <a href="/" class="back-link">&larr; Back to Dashboard</a>
-    </div>
+    <a href="/" class="back-link">&larr; Back to Dashboard</a>
 </div>
 
 <div class="container">
@@ -118,71 +109,154 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
             <select class="sprint-select" id="sprintSelect" onchange="loadReport()">
                 <option value="">Loading sprints...</option>
             </select>
-            <button class="btn btn-primary" id="refreshBtn" onclick="loadReport()">Refresh</button>
+            <button class="btn btn-primary" onclick="loadReport()">Refresh</button>
+            <button class="btn btn-green" onclick="saveReport()">Save Report</button>
+            <span class="saved-msg" id="savedMsg">Saved!</span>
         </div>
-        <div class="export-bar">
+        <div style="display:flex;gap:8px">
             <button class="btn btn-outline" onclick="copyAsHtml()">Copy as Email</button>
             <button class="btn btn-outline" onclick="printReport()">Print</button>
         </div>
     </div>
+    <div class="history-bar">
+        <label>Saved Reports:</label>
+        <select class="history-select" id="historySelect" onchange="loadSavedReport()">
+            <option value="">-- Current Live --</option>
+        </select>
+    </div>
 
     <div id="reportArea">
-        <div class="loading-overlay" id="loadingMsg">
-            <div class="spinner"></div> Loading report...
-        </div>
+        <div class="loading-overlay"><div class="spinner"></div> Loading report...</div>
     </div>
 </div>
 
 <script>
-let reportData = null;
+let reportData=null, previousReport=null;
 
-async function loadSprints() {
-    try {
-        const r = await fetch('/api/sprints');
-        if (r.status === 401) { window.location.href = '/login'; return; }
-        const d = await r.json();
-        const sel = document.getElementById('sprintSelect');
-        sel.innerHTML = '';
-        const sprints = d.sprints || [];
-        // Show most recent first
-        for (let i = sprints.length - 1; i >= 0; i--) {
-            const s = sprints[i];
-            const opt = document.createElement('option');
-            opt.value = s.path;
-            opt.textContent = s.name + (s.time_frame === 'current' ? ' (Current)' : '');
-            if (s.time_frame === 'current') opt.selected = true;
+async function loadSprints(){
+    try{
+        const r=await fetch('/api/sprints');
+        if(r.status===401){window.location.href='/login';return}
+        const d=await r.json();
+        const sel=document.getElementById('sprintSelect');
+        sel.innerHTML='';
+        for(let i=(d.sprints||[]).length-1;i>=0;i--){
+            const s=d.sprints[i];
+            const opt=document.createElement('option');
+            opt.value=s.path;
+            opt.textContent=s.name+(s.time_frame==='current'?' (Current)':'');
+            if(s.time_frame==='current')opt.selected=true;
             sel.appendChild(opt);
         }
         loadReport();
-    } catch (e) {
-        document.getElementById('reportArea').innerHTML = '<div class="loading-overlay" style="color:var(--red)">Failed to load sprints: ' + e.message + '</div>';
+    }catch(e){
+        document.getElementById('reportArea').innerHTML='<div class="loading-overlay" style="color:var(--red)">Failed to load sprints: '+e.message+'</div>';
     }
 }
 
-async function loadReport() {
-    const sprint = document.getElementById('sprintSelect').value;
-    if (!sprint) return;
-    const area = document.getElementById('reportArea');
-    area.innerHTML = '<div class="loading-overlay"><div class="spinner"></div> Loading report...</div>';
+async function loadReport(){
+    const sprint=document.getElementById('sprintSelect').value;
+    if(!sprint)return;
+    const area=document.getElementById('reportArea');
+    area.innerHTML='<div class="loading-overlay"><div class="spinner"></div> Loading report...</div>';
+    document.getElementById('historySelect').value='';
 
-    try {
-        const r = await fetch('/api/daily-status?sprint=' + encodeURIComponent(sprint));
-        if (r.status === 401) { window.location.href = '/login'; return; }
-        const d = await r.json();
-        if (d.error) { area.innerHTML = '<div class="loading-overlay" style="color:var(--red)">' + d.error + '</div>'; return; }
-        reportData = d;
+    try{
+        const r=await fetch('/api/daily-status?sprint='+encodeURIComponent(sprint));
+        if(r.status===401){window.location.href='/login';return}
+        const d=await r.json();
+        if(d.error){area.innerHTML='<div class="loading-overlay" style="color:var(--red)">'+d.error+'</div>';return}
+        reportData=d;
+        // Load previous saved report for comparison
+        await loadPreviousReport(d.sprint_name);
         renderReport(d);
-    } catch (e) {
-        area.innerHTML = '<div class="loading-overlay" style="color:var(--red)">Failed: ' + e.message + '</div>';
+        loadHistory();
+    }catch(e){
+        area.innerHTML='<div class="loading-overlay" style="color:var(--red)">Failed: '+e.message+'</div>';
     }
 }
 
-function renderReport(d) {
-    const area = document.getElementById('reportArea');
-    const s = d.day_summary;
-    area.innerHTML = `
+async function loadPreviousReport(sprintName){
+    previousReport=null;
+    try{
+        const r=await fetch('/api/daily-status/history?sprint='+encodeURIComponent(sprintName));
+        const d=await r.json();
+        const reports=d.reports||[];
+        if(reports.length>0){
+            // Load the most recent saved report
+            const latest=reports[0];
+            const r2=await fetch('/api/daily-status/load?sprint='+encodeURIComponent(latest.sprint)+'&date='+encodeURIComponent(latest.date));
+            if(r2.ok) previousReport=await r2.json();
+        }
+    }catch(e){}
+}
+
+async function loadHistory(){
+    const sprint=document.getElementById('sprintSelect').value;
+    const sprintName=sprint.split('\\').pop();
+    try{
+        const r=await fetch('/api/daily-status/history?sprint='+encodeURIComponent(sprintName));
+        const d=await r.json();
+        const sel=document.getElementById('historySelect');
+        sel.innerHTML='<option value="">-- Current Live --</option>';
+        for(const rpt of d.reports||[]){
+            const opt=document.createElement('option');
+            opt.value=JSON.stringify(rpt);
+            opt.textContent=rpt.date;
+            sel.appendChild(opt);
+        }
+    }catch(e){}
+}
+
+async function loadSavedReport(){
+    const val=document.getElementById('historySelect').value;
+    if(!val){loadReport();return}
+    const info=JSON.parse(val);
+    const area=document.getElementById('reportArea');
+    area.innerHTML='<div class="loading-overlay"><div class="spinner"></div> Loading saved report...</div>';
+    try{
+        const r=await fetch('/api/daily-status/load?sprint='+encodeURIComponent(info.sprint)+'&date='+encodeURIComponent(info.date));
+        const d=await r.json();
+        if(d.error){area.innerHTML='<div class="loading-overlay" style="color:var(--red)">'+d.error+'</div>';return}
+        reportData=d;
+        previousReport=null;
+        renderReport(d);
+    }catch(e){
+        area.innerHTML='<div class="loading-overlay" style="color:var(--red)">Failed: '+e.message+'</div>';
+    }
+}
+
+async function saveReport(){
+    if(!reportData)return;
+    try{
+        const r=await fetch('/api/daily-status/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({report:reportData})});
+        const d=await r.json();
+        if(d.ok){
+            const msg=document.getElementById('savedMsg');
+            msg.classList.add('show');setTimeout(()=>msg.classList.remove('show'),2000);
+            loadHistory();
+        }else{alert(d.error||'Failed to save')}
+    }catch(e){alert('Error: '+e.message)}
+}
+
+function cmp(current,prev,label){
+    if(prev==null)return '';
+    const diff=current-prev;
+    if(diff===0)return '<span class="cmp-val cmp-same">(=)</span>';
+    const arrow=diff>0?'&#9650;':'&#9660;';
+    const cls=diff>0?'cmp-up':'cmp-down';
+    return `<span class="cmp-val ${cls}">${arrow}${Math.abs(diff)}</span>`;
+}
+
+function renderReport(d){
+    const area=document.getElementById('reportArea');
+    const s=d.day_summary;
+    const p=previousReport?previousReport.day_summary:null;
+    const p1Names=(s.p1_members||[]).join(', ');
+    const p2Names=(s.p2_members||[]).join(', ');
+
+    let html=`
     <div class="report" id="reportContent">
-        <!-- Banner -->
         <div class="report-banner">
             <h2>ARTHATECH &mdash; Exchange &amp; Payments &nbsp;|&nbsp; DAILY SPRINT STATUS EMAIL</h2>
         </div>
@@ -195,16 +269,17 @@ function renderReport(d) {
         <!-- DAY SUMMARY -->
         <div class="section-header"><div class="section-icon">&#9632;</div> DAY SUMMARY</div>
         <table class="summary-table">
-            <tr><td class="metric">Total PBIs in Sprint</td><td class="value">${s.total_pbis}</td></tr>
-            <tr><td class="metric">PBIs Completed</td><td class="value">${s.pbis_completed}</td></tr>
-            <tr><td class="metric">PBIs In Progress</td><td class="value">${s.pbis_in_progress}</td></tr>
-            <tr><td class="metric">PBIs Not Started</td><td class="value">${s.pbis_not_started}</td></tr>
-            <tr><td class="metric">Total Tasks</td><td class="value">${s.total_tasks}</td></tr>
-            <tr><td class="metric">Tasks Done Today</td><td class="value">${s.tasks_done_today}</td></tr>
+            <tr><td class="metric">Total PBIs in Sprint</td><td class="value">${s.total_pbis} ${p?cmp(s.total_pbis,p.total_pbis):''}</td></tr>
+            <tr><td class="metric">PBIs Completed</td><td class="value">${s.pbis_completed} ${p?cmp(s.pbis_completed,p.pbis_completed):''}</td></tr>
+            <tr><td class="metric">PBIs In Progress</td><td class="value">${s.pbis_in_progress} ${p?cmp(s.pbis_in_progress,p.pbis_in_progress):''}</td></tr>
+            <tr><td class="metric">PBIs Not Started</td><td class="value">${s.pbis_not_started} ${p?cmp(s.pbis_not_started,p.pbis_not_started):''}</td></tr>
+            <tr><td class="metric">Total Tasks</td><td class="value">${s.total_tasks} ${p?cmp(s.total_tasks,p.total_tasks):''}</td></tr>
+            <tr><td class="metric">Today Closed Tasks</td><td class="value">${s.tasks_closed_today}</td></tr>
+            <tr><td class="metric">Total Tasks Closed</td><td class="value">${s.total_tasks_closed} ${p?cmp(s.total_tasks_closed,p.total_tasks_closed):''}</td></tr>
             <tr><td class="metric">Overall Sprint Progress</td><td class="value">${esc(s.overall_progress)}</td></tr>
-            <tr><td class="metric">Blockers</td><td class="value">${s.blockers}</td></tr>
-            <tr><td class="metric">P1 Issues</td><td class="value">${s.p1_issues}</td></tr>
-            <tr><td class="metric">P2 Issues</td><td class="value">${s.p2_issues}</td></tr>
+            <tr><td class="metric">Blockers</td><td class="value">${s.blockers} ${p?cmp(s.blockers,p.blockers):''}</td></tr>
+            <tr><td class="metric">P1 Issues</td><td class="value">${s.p1_issues}${p1Names?' <span style="font-size:11px;color:var(--red);font-weight:400">('+esc(p1Names)+')</span>':''} ${p?cmp(s.p1_issues,p.p1_issues):''}</td></tr>
+            <tr><td class="metric">P2 Issues</td><td class="value">${s.p2_issues}${p2Names?' <span style="font-size:11px;color:var(--orange);font-weight:400">('+esc(p2Names)+')</span>':''} ${p?cmp(s.p2_issues,p.p2_issues):''}</td></tr>
         </table>
 
         <!-- PBI STATUS UPDATE -->
@@ -218,119 +293,80 @@ function renderReport(d) {
                 <th style="width:100px">ETA</th>
             </tr></thead>
             <tbody>
-                ${d.pbi_status.length ? d.pbi_status.map(p => `
+                ${d.pbi_status.length?d.pbi_status.map(pb=>`
                 <tr>
-                    <td><strong>${p.id}</strong></td>
-                    <td>${esc(p.title)}</td>
-                    <td>${esc(p.tasks_done)}</td>
-                    <td><span class="status-badge status-${p.status_color}">${esc(p.status)}</span></td>
-                    <td><span class="editable" contenteditable="true" data-field="eta" data-id="${p.id}">${esc(p.eta)}</span></td>
-                </tr>`).join('') : '<tr class="empty-row"><td colspan="5">No PBIs in this sprint</td></tr>'}
+                    <td><strong>${pb.id}</strong></td>
+                    <td>${esc(pb.title)}</td>
+                    <td>${esc(pb.tasks_done)}</td>
+                    <td><span class="status-badge status-${pb.status_color}">${esc(pb.status)}</span></td>
+                    <td><span class="editable" contenteditable="true">${esc(pb.eta)}</span></td>
+                </tr>`).join(''):'<tr class="empty-row"><td colspan="5">No PBIs in this sprint</td></tr>'}
             </tbody>
         </table>
 
-        <!-- TESTING STATUS -->
-        <div class="section-header"><div class="section-icon">&#9632;</div> TESTING STATUS</div>
-        <table class="report-table">
-            <thead><tr>
-                <th style="width:80px">PBI ID</th>
-                <th>Scenarios Tested <span class="issue-dot dot-green"></span></th>
-                <th style="width:110px">P1 Issues <span class="issue-dot dot-red"></span></th>
-                <th style="width:110px">P2 Issues <span class="issue-dot dot-yellow"></span></th>
-                <th>Remarks</th>
-            </tr></thead>
-            <tbody>
-                ${d.testing_status.length ? d.testing_status.map(t => `
-                <tr>
-                    <td><strong>${t.id}</strong></td>
-                    <td>${t.scenarios_tested}</td>
-                    <td>${t.p1_issues}</td>
-                    <td>${t.p2_issues}</td>
-                    <td><span class="editable" contenteditable="true" data-field="remarks" data-id="${t.id}">${esc(t.remarks)}</span></td>
-                </tr>`).join('') : '<tr class="empty-row"><td colspan="5">No testing data</td></tr>'}
-            </tbody>
-        </table>
+        `;
 
-        <!-- BLOCKERS & RISKS -->
-        <div class="section-header"><div class="section-icon">&#9632;</div> BLOCKERS &amp; RISKS</div>
-        <table class="report-table">
-            <thead><tr>
-                <th style="width:80px">PBI ID</th>
-                <th>Blocker / Risk Description</th>
-                <th style="width:100px">Raised By</th>
-                <th style="width:110px">Action Owner</th>
-                <th style="width:110px">ETA to Resolve</th>
-            </tr></thead>
-            <tbody>
-                ${d.blockers.length ? d.blockers.map(b => `
-                <tr>
-                    <td><strong>${b.pbi_id}</strong></td>
-                    <td>${esc(b.description)}</td>
-                    <td>${esc(b.raised_by)}</td>
-                    <td><span class="editable" contenteditable="true" data-field="action_owner" data-id="${b.pbi_id}">${esc(b.action_owner)}</span></td>
-                    <td><span class="editable" contenteditable="true" data-field="eta_resolve" data-id="${b.pbi_id}">${esc(b.eta_resolve)}</span></td>
-                </tr>`).join('') : '<tr class="empty-row"><td colspan="5">No blockers or risks</td></tr>'}
-            </tbody>
-        </table>
+    // PREVIOUS REPORT VS THIS REPORT
+    if(p){
+        const prevPbiMap={};
+        for(const pb of previousReport.pbi_status||[])prevPbiMap[pb.id]=pb;
+        let changes=[];
+        for(const pb of d.pbi_status){
+            const prev=prevPbiMap[pb.id];
+            if(!prev){changes.push({id:pb.id,title:pb.title,field:'NEW',prev:'-',curr:pb.status});continue}
+            if(prev.status!==pb.status)changes.push({id:pb.id,title:pb.title,field:'Status',prev:prev.status,curr:pb.status});
+            if(prev.tasks_done!==pb.tasks_done)changes.push({id:pb.id,title:pb.title,field:'Tasks Done',prev:prev.tasks_done,curr:pb.tasks_done});
+        }
 
-        <!-- PLAN FOR TOMORROW -->
-        <div class="section-header"><div class="section-icon">&#9632;</div> PLAN FOR TOMORROW</div>
+        html+=`
+        <div class="section-header" style="background:#7c3aed;border-top-color:#5b21b6"><div class="section-icon">&#9632;</div> PREVIOUS REPORT VS THIS REPORT</div>
+        <div style="padding:8px 14px;background:#f5f3ff;font-size:11px;color:#6d28d9;border-bottom:1px solid #e9e5f5">
+            Comparing with saved report from <strong>${esc(previousReport.date)}</strong>
+        </div>
         <table class="report-table">
-            <thead><tr>
+            <thead><tr style="background:#7c3aed">
                 <th style="width:80px">PBI ID</th>
-                <th>Planned Tasks</th>
-                <th style="width:110px">Owner</th>
-                <th style="width:80px">Priority</th>
-                <th>Notes</th>
+                <th>PBI Name</th>
+                <th style="width:100px">Change</th>
+                <th style="width:120px">Previous</th>
+                <th style="width:120px">Current</th>
             </tr></thead>
             <tbody>
-                ${d.plan_tomorrow.length ? d.plan_tomorrow.map(p => `
+                ${changes.length?changes.map(c=>`
                 <tr>
-                    <td><strong>${p.pbi_id}</strong></td>
-                    <td>${esc(p.task)}</td>
-                    <td>${esc(p.owner)}</td>
-                    <td><span class="priority-badge priority-${p.priority}">${p.priority}</span></td>
-                    <td><span class="editable" contenteditable="true" data-field="notes" data-id="${p.pbi_id}">${esc(p.notes)}</span></td>
-                </tr>`).join('') : '<tr class="empty-row"><td colspan="5">No planned tasks</td></tr>'}
+                    <td><strong>${c.id}</strong></td>
+                    <td>${esc(c.title)}</td>
+                    <td><span class="status-badge status-${c.field==='NEW'?'green':'yellow'}">${esc(c.field)}</span></td>
+                    <td>${esc(c.prev)}</td>
+                    <td><strong>${esc(c.curr)}</strong></td>
+                </tr>`).join(''):'<tr class="empty-row"><td colspan="5">No changes since previous report</td></tr>'}
             </tbody>
-        </table>
-    </div>`;
+        </table>`;
+    }
+
+    html+=`</div>`;
+    area.innerHTML=html;
 }
 
-function esc(s) {
-    if (s == null) return '';
+function esc(s){
+    if(s==null)return '';
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function copyAsHtml() {
-    const el = document.getElementById('reportContent');
-    if (!el) return;
-    const range = document.createRange();
+function copyAsHtml(){
+    const el=document.getElementById('reportContent');
+    if(!el)return;
+    const range=document.createRange();
     range.selectNodeContents(el);
-    const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
+    const sel=window.getSelection();
+    sel.removeAllRanges();sel.addRange(range);
     document.execCommand('copy');
     sel.removeAllRanges();
     alert('Report copied to clipboard! Paste it into your email client.');
 }
 
-function printReport() {
-    window.print();
-}
+function printReport(){window.print()}
 
-// Print styles
-const printStyle = document.createElement('style');
-printStyle.textContent = `
-@media print {
-    .header, .action-bar { display: none !important; }
-    .container { padding: 0; max-width: 100%; }
-    .report { border: none; box-shadow: none; border-radius: 0; }
-    body { background: #fff; }
-}`;
-document.head.appendChild(printStyle);
-
-// Init
 loadSprints();
 </script>
 </body>
